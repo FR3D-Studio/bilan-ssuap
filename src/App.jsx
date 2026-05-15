@@ -34,7 +34,9 @@ const BLANK_SURVEILLANCE = { heure: "", fr: "", spo2: "", fc: "", ta: "", glasgo
 
 const INITIAL_DATA = {
   intervention: { dateHeure: "", adresse: "", nature: "", dangers: "", securite: false, renforts: "" },
-  identite: { nom: "", prenom: "", age: "", sexe: "", victime: "" },
+  identite: { nom: "", prenom: "", age: "", sexe: "", victime: "Malaise/Maladie",
+    natureVictime: "",
+    societe: "" },
   circonstanciel: { circonstances: "", plainte: "", gestesTemoins: "" },
   primaire: {
     xHemorragie: false,
@@ -287,23 +289,32 @@ function Area({ label, value, onChange, placeholder = "" }) {
   );
 }
 
-function SelectField({ label, value, onChange, options }) {
+function SelectField({ label, value, onChange, options, danger = false }) {
+  const selectClass = danger
+    ? "w-full rounded-2xl border border-red-700 bg-red-600 px-3 py-2 text-sm font-bold text-white shadow-sm outline-none transition placeholder:text-red-100 focus:border-red-900 focus:ring-2 focus:ring-red-300"
+    : "w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200";
+
   return (
     <label className="block space-y-1">
-      <span className="text-sm font-medium text-slate-700">{label}</span>
-      <select value={txt(value)} onChange={(e) => onChange(e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+      <span className={danger ? "text-sm font-black text-red-700" : "text-sm font-medium text-slate-700"}>{label}</span>
+      <select value={txt(value)} onChange={(e) => onChange(e.target.value)} className={selectClass}>
         <option value="">Sélectionner...</option>
         {options.map((option) => (
           <option key={option} value={option}>{option}</option>
         ))}
       </select>
+      
     </label>
   );
 }
 
-function Check({ label, checked, onChange }) {
+function Check({ label, checked, onChange, danger = false }) {
+  const boxClass = danger
+    ? "flex items-center gap-3 rounded-2xl border border-red-700 bg-red-600 p-3 text-sm font-black text-white shadow-sm"
+    : "flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-sm shadow-sm";
+
   return (
-    <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-sm shadow-sm">
+    <label className={boxClass}>
       <input type="checkbox" checked={Boolean(checked)} onChange={(e) => onChange(e.target.checked)} className="h-5 w-5 accent-blue-600" />
       <span>{label}</span>
     </label>
@@ -435,7 +446,48 @@ function DepartTab({ data, set }) {
           <Field label="Prénom" value={data.identite.prenom} onChange={(v) => set(["identite", "prenom"], v)} />
           <Field label="Âge" value={data.identite.age} onChange={(v) => set(["identite", "age"], v)} />
           <Field label="Sexe" value={data.identite.sexe} onChange={(v) => set(["identite", "sexe"], v)} />
-          <Field label="Type" value={data.identite.victime} onChange={(v) => set(["identite", "victime"], v)} placeholder="blessé, malade, impliqué..." />
+          <SelectField
+            label="Type"
+            value={data.identite.victime}
+            onChange={(v) => set(["identite", "victime"], v)}
+            options={[
+              "Malaise/Maladie",
+              "Intoxication",
+              "Brulure",
+              "Electrisation",
+              "Plaie",
+              "Chute",
+              "AVP",
+              "Accident du travail",
+              "Incendie",
+              "Explosion",
+              "Trouble du comportement",
+              "Social",
+              "Autre traumatisme",
+            ]}
+          />
+
+          <div className="space-y-3">
+            <SelectField
+              label="Nature de la victime"
+              value={data.identite.natureVictime}
+              onChange={(v) => set(["identite", "natureVictime"], v)}
+              options={[
+                "PAX",
+                "PNC",
+                "Accompagnant",
+                "Salarié sous traitant",
+                "Salarié société Aéroportuaire",
+              ]}
+            />
+
+            <Field
+              label="Nom de la société"
+              value={data.identite.societe}
+              onChange={(v) => set(["identite", "societe"], v)}
+              placeholder="Nom entreprise / société"
+            />
+          </div>
           <Area label="Circonstances" value={data.circonstanciel.circonstances} onChange={(v) => set(["circonstanciel", "circonstances"], v)} />
           <Area label="Plainte principale" value={data.circonstanciel.plainte} onChange={(v) => set(["circonstanciel", "plainte"], v)} />
           <Area label="Gestes déjà réalisés par témoins" value={data.circonstanciel.gestesTemoins} onChange={(v) => set(["circonstanciel", "gestesTemoins"], v)} />
@@ -457,6 +509,7 @@ function PrimaireTab({ data, set, detresseVitale }) {
         <SelectField
           label="B : qualité respiration"
           value={data.primaire.bQualite}
+          danger={isRespiratoryDistressQuality(data.primaire.bQualite)}
           onChange={(v) => {
             set(["primaire", "bQualite"], v);
             set(["primaire", "bDetresse"], isRespiratoryDistressQuality(v));
@@ -465,11 +518,12 @@ function PrimaireTab({ data, set, detresseVitale }) {
         />
         <Field label="B : FR" value={data.primaire.bFR} onChange={(v) => set(["primaire", "bFR"], v)} />
         <Field label="B : SpO₂" value={data.primaire.bSpO2} onChange={(v) => set(["primaire", "bSpO2"], v)} />
-        <Check label="B : détresse respiratoire" checked={data.primaire.bDetresse} onChange={(v) => set(["primaire", "bDetresse"], v)} />
+        <Check label={data.primaire.bDetresse ? "B : détresse respiratoire / Appel SAMU immédiat" : "B : détresse respiratoire"} checked={data.primaire.bDetresse} danger={data.primaire.bDetresse} onChange={(v) => set(["primaire", "bDetresse"], v)} />
         
         <SelectField
           label="C : pouls"
           value={data.primaire.cPouls}
+          danger={data.primaire.cPouls === "Non perçu"}
           onChange={(v) => {
             set(["primaire", "cPouls"], v);
             set(["primaire", "cDetresse"], v === "Non perçu");
@@ -479,7 +533,7 @@ function PrimaireTab({ data, set, detresseVitale }) {
         <Field label="C : FC" value={data.primaire.cFC} onChange={(v) => set(["primaire", "cFC"], v)} />
         <Field label="C : TA" value={data.primaire.cTA} onChange={(v) => set(["primaire", "cTA"], v)} />
         <Field label="C : TRC" value={data.primaire.cTRC} onChange={(v) => set(["primaire", "cTRC"], v)} />
-        <Check label="C : détresse circulatoire" checked={data.primaire.cDetresse} onChange={(v) => set(["primaire", "cDetresse"], v)} />
+        <Check label={data.primaire.cDetresse ? "C : détresse circulatoire / Appel SAMU immédiat" : "C : détresse circulatoire"} checked={data.primaire.cDetresse} danger={data.primaire.cDetresse} onChange={(v) => set(["primaire", "cDetresse"], v)} />
         <div className="md:col-span-2">
           <ScoreCard title="Score de Glasgow" value={`Glasgow total : ${glasgow}`} danger={glasgow >= 3 && glasgow <= 7}>
             <div className="grid gap-3 md:grid-cols-4">
