@@ -1,16 +1,46 @@
-# React + Vite
+# Bilan SSUAP Mobile
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Application web de structuration du bilan SSUAP, utilisable sur tablette, téléphone ou ordinateur.
 
-Currently, two official plugins are available:
+## Objectif
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+L’application permet d’aider à la réalisation d’un bilan opérationnel structuré :
 
-## React Compiler
+- bilan circonstanciel ;
+- bilan primaire XABCDE ;
+- bilan secondaire ;
+- surveillance ;
+- gestes réalisés ;
+- scores utiles : Glasgow, FAST, Malinas, Wallace ;
+- tri NOVI ;
+- ajout de photos locales ;
+- génération d’un résumé exportable par mail ou impression PDF.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Base documentaire
 
-## Expanding the ESLint configuration
+Le contenu et l’organisation de l’application sont basés sur le GDTO SSUAP 
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Cette application est un outil d’aide à la structuration du bilan.  
+Elle ne remplace pas les procédures en vigueur, la régulation médicale, ni la chaîne de commandement.
+
+## Déploiement
+
+L’application est déployée via Vercel :
+
+https://bilan-ssuap.vercel.app
+
+Avertissement
+
+Les données saisies restent locales dans l’application.
+Les photos ajoutées sont conservées uniquement dans le bilan en cours et ne sont pas envoyées automatiquement sur un serveur.
+
+## Développement
+
+Projet développé avec :
+
+- React
+- Vite
+- Tailwind CSS
+- Framer Motion
+- Lucide React
+
