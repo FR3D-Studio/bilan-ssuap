@@ -7,6 +7,8 @@ import Field from "./components/ui/Field";
 import SelectField from "./components/ui/SelectField";
 import Check from "./components/ui/Check";
 import Button from "./components/ui/Button";
+import CardBlock from "./components/ui/CardBlock";
+import Badge from "./components/ui/Badge";
 import {
   getScore,
   calculateGlasgow,
@@ -143,10 +145,6 @@ function PhotoInput({ onAddPhotos }) {
   );
 }
 
-function Badge({ children, danger }) {
-  return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${danger ? "bg-red-600 text-white" : "bg-emerald-600 text-white"}`}>{children}</span>;
-}
-
 function NoviBadge({ value }) {
   const cleanValue = normalizeNovi(value);
   const styles = {
@@ -170,27 +168,6 @@ function NoviBadge({ value }) {
     <div className={`inline-flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-black shadow-sm ${style}`}>
       <span className="text-xl">{dot}</span>
       <span>{cleanValue}</span>
-    </div>
-  );
-}
-
-function CardBlock({ title, icon: Icon, tone = "slate", children }) {
-  const tones = {
-    slate: "from-slate-50 to-white border-slate-200",
-    red: "from-red-50 to-white border-red-200",
-    blue: "from-blue-50 to-white border-blue-200",
-    green: "from-emerald-50 to-white border-emerald-200",
-    amber: "from-amber-50 to-white border-amber-200",
-  };
-  return (
-    <div className={`rounded-3xl border bg-gradient-to-br ${tones[tone] ?? tones.slate} shadow-sm`}>
-      <div className="space-y-4 p-4 md:p-6">
-        <div className="flex items-center gap-2">
-          {Icon ? <Icon className="h-5 w-5" /> : null}
-          <h2 className="text-lg font-bold text-slate-900">{title}</h2>
-        </div>
-        {children}
-      </div>
     </div>
   );
 }
