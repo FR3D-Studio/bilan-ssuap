@@ -1,107 +1,25 @@
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { AlertTriangle, ClipboardList, HeartPulse, Send, ShieldCheck, Stethoscope, TimerReset } from "lucide-react";
+import { OPTIONS, GLASGOW, MALINAS } from "./data/options";
+import { INITIAL_DATA, BLANK_SURVEILLANCE } from "./data/initialData";
+import Field from "./components/ui/Field";
+import SelectField from "./components/ui/SelectField";
+import Check from "./components/ui/Check";
+import Button from "./components/ui/Button";
+import {
+  getScore,
+  calculateGlasgow,
+  calculateMalinas,
+  calculateWallace,
+  isFastPositive,
+  isRespiratoryDistressQuality,
+  hasDetresseVitale,
+} from "./utils/scores";
 
-const scoreOption = (score, label) => `${score} - ${label}`;
 const txt = (value) => (value === null || value === undefined ? "" : String(value));
 const yesNo = (value) => (value ? "OUI" : "NON");
 const clone = (value) => JSON.parse(JSON.stringify(value));
-
-const OPTIONS = {
-  voiesAeriennes: ["Libres", "Obstruction partielle", "Obstruction complète", "Encombrées", "Vomissements", "Sang", "Corps étranger", "Canule en place"],
-  respiration: ["Normale", "Bruyante", "Superficielle", "Difficile", "Absente", "Gasp", "Tirage"],
-  pouls: ["Régulier", "Irrégulier", "Bien frappé", "Filant", "Non perçu"],
-  conscience: ["Consciente", "Confuse", "Désorientée", "Somnolente", "Inconsciente", "Agitée"],
-  position: ["Allongée", "PLS", "Demi-assise", "Assise", "Décubitus latéral gauche", "Jambes surélevées"],
-  novi: ["Non concerné", "Urgence absolue", "Urgence relative", "Impliqué / indemne", "Décédé"],
-};
-
-const GLASGOW = {
-  eyes: [scoreOption(4, "Spontanée"), scoreOption(3, "À la parole"), scoreOption(2, "À la douleur"), scoreOption(1, "Aucune")],
-  verbal: [scoreOption(5, "Orientée"), scoreOption(4, "Confuse"), scoreOption(3, "Inappropriée"), scoreOption(2, "Incompréhensible"), scoreOption(1, "Aucune")],
-  motor: [scoreOption(6, "Obéit aux ordres"), scoreOption(5, "Localise la douleur"), scoreOption(4, "Évite la douleur"), scoreOption(3, "Flexion anormale"), scoreOption(2, "Extension"), scoreOption(1, "Aucune")],
-};
-
-const MALINAS = {
-  parite: [scoreOption(0, "1er accouchement"), scoreOption(1, "2e accouchement"), scoreOption(2, "3e et +")],
-  travail: [scoreOption(0, "< 3h"), scoreOption(1, "3 à 5h"), scoreOption(2, "> 5h")],
-  contractions: [scoreOption(0, "< 1 min"), scoreOption(1, "1 min"), scoreOption(2, "> 1 min")],
-  intervalle: [scoreOption(0, "> 5 min"), scoreOption(1, "3 à 5 min"), scoreOption(2, "< 3 min")],
-  eaux: [scoreOption(0, "Non"), scoreOption(1, "Récente"), scoreOption(2, "> 1h")],
-};
-
-const BLANK_SURVEILLANCE = { heure: "", fr: "", spo2: "", fc: "", ta: "", glasgow: "", evn: "", notes: "" };
-
-const INITIAL_DATA = {
-  intervention: { dateHeure: "", adresse: "", nature: "", dangers: "", securite: false, renforts: "" },
-  identite: { nom: "", prenom: "", age: "", sexe: "", victime: "Malaise/Maladie",
-    natureVictime: "",
-    societe: "" },
-  circonstanciel: { circonstances: "", plainte: "", gestesTemoins: "" },
-  primaire: {
-    xHemorragie: false,
-    xAction: "",
-    aVA: "",
-    aRachis: false,
-    bQualite: "",
-    bFR: "",
-    bSpO2: "",
-    bDetresse: false,
-    cPouls: "",
-    cFC: "",
-    cTA: "",
-    cTRC: "",
-    cDetresse: false,
-    glasgowYeux: "",
-    glasgowVerbal: "",
-    glasgowMoteur: "",
-    dConscience: "",
-    dNeuro: "",
-    eLesions: "",
-  },
-  secondaire: {
-    pqrstP: "",
-    pqrstQ: "",
-    pqrstR: "",
-    pqrstS: "",
-    pqrstT: "",
-    maladie: "",
-    hospitalisation: "",
-    traitement: "",
-    allergie: "",
-    glycemie: "",
-    temperature: "",
-    evn: "",
-    fastFace: false,
-    fastArm: false,
-    fastSpeech: false,
-    fastTime: "",
-    malinasParite: "",
-    malinasTravail: "",
-    malinasContractions: "",
-    malinasIntervalle: "",
-    malinasEaux: "",
-    wallaceMode: "Adulte - règle des 9",
-    wallacePaumes: "",
-    wallaceTeteAvant: false,
-    wallaceTeteArriere: false,
-    wallaceBrasDroitAvant: false,
-    wallaceBrasDroitArriere: false,
-    wallaceBrasGaucheAvant: false,
-    wallaceBrasGaucheArriere: false,
-    wallaceTroncAvant: false,
-    wallaceTroncArriere: false,
-    wallaceJambeDroiteAvant: false,
-    wallaceJambeDroiteArriere: false,
-    wallaceJambeGaucheAvant: false,
-    wallaceJambeGaucheArriere: false,
-    wallacePerinee: false,
-  },
-  gestes: { oxygene: false, o2Debit: "", position: "", immobilisation: false, pansement: false, asu: "", autres: "" },
-  samu: { couleur: "", heureTransmission: "", decision: "", destination: "", consignes: "" },
-  surveillance: [{ ...BLANK_SURVEILLANCE }],
-  photos: [],
-};
 
 function normalizeNovi(value) {
   const raw = txt(value).trim();
@@ -110,76 +28,6 @@ function normalizeNovi(value) {
   if (raw.includes("Impliqué")) return "Impliqué / indemne";
   if (raw.includes("Décédé")) return "Décédé";
   return raw || "Non concerné";
-}
-
-function getScore(value) {
-  if (!value) return 0;
-  const score = Number(String(value).split("-")[0].trim());
-  return Number.isFinite(score) ? score : 0;
-}
-
-function calculateGlasgow(data) {
-  const p = data?.primaire ?? {};
-  return getScore(p.glasgowYeux) + getScore(p.glasgowVerbal) + getScore(p.glasgowMoteur);
-}
-
-function calculateMalinas(sec) {
-  return getScore(sec?.malinasParite) + getScore(sec?.malinasTravail) + getScore(sec?.malinasContractions) + getScore(sec?.malinasIntervalle) + getScore(sec?.malinasEaux);
-}
-
-function calculateWallace(sec) {
-  if (sec?.wallaceMode === "Enfant - règle adaptée") {
-    const zones = [
-      ["wallaceTeteAvant", 8.5],
-      ["wallaceTeteArriere", 8.5],
-      ["wallaceBrasDroitAvant", 4.5],
-      ["wallaceBrasDroitArriere", 4.5],
-      ["wallaceBrasGaucheAvant", 4.5],
-      ["wallaceBrasGaucheArriere", 4.5],
-      ["wallaceTroncAvant", 18],
-      ["wallaceTroncArriere", 18],
-      ["wallaceJambeDroiteAvant", 7],
-      ["wallaceJambeDroiteArriere", 7],
-      ["wallaceJambeGaucheAvant", 7],
-      ["wallaceJambeGaucheArriere", 7],
-      ["wallacePerinee", 1],
-    ];
-    const total = zones.reduce((sum, [key, score]) => sum + (sec?.[key] ? score : 0), 0);
-    return Number(total.toFixed(1));
-  }
-
-  if (sec?.wallaceMode === "Paume = 1%") {
-    const paumes = Number(sec?.wallacePaumes || 0);
-    return Number.isFinite(paumes) ? paumes : 0;
-  }
-
-  const zones = [
-    ["wallaceTeteAvant", 4.5],
-    ["wallaceTeteArriere", 4.5],
-    ["wallaceBrasDroitAvant", 4.5],
-    ["wallaceBrasDroitArriere", 4.5],
-    ["wallaceBrasGaucheAvant", 4.5],
-    ["wallaceBrasGaucheArriere", 4.5],
-    ["wallaceTroncAvant", 18],
-    ["wallaceTroncArriere", 18],
-    ["wallaceJambeDroiteAvant", 9],
-    ["wallaceJambeDroiteArriere", 9],
-    ["wallaceJambeGaucheAvant", 9],
-    ["wallaceJambeGaucheArriere", 9],
-    ["wallacePerinee", 1],
-  ];
-  const total = zones.reduce((sum, [key, score]) => sum + (sec?.[key] ? score : 0), 0);
-  return Number(total.toFixed(1));
-}
-
-function isFastPositive(sec) {
-  return Boolean(sec?.fastFace || sec?.fastArm || sec?.fastSpeech);
-}
-
-function hasDetresseVitale(data) {
-  const p = data?.primaire ?? {};
-  const glasgow = calculateGlasgow(data);
-  return Boolean(p.xHemorragie || p.bDetresse || p.cDetresse || (glasgow >= 3 && glasgow <= 7));
 }
 
 function buildResume(data) {
@@ -242,10 +90,6 @@ function buildResume(data) {
   ].join("\n");
 }
 
-function isRespiratoryDistressQuality(value) {
-  return value === "Absente" || value === "Gasp";
-}
-
 function photoCountText(photos) {
   const count = Array.isArray(photos) ? photos.length : 0;
   return `${count} photo${count > 1 ? "s" : ""}`;
@@ -271,52 +115,11 @@ function runSelfTests() {
 }
 runSelfTests();
 
-function Field({ label, value, onChange, placeholder = "", type = "text" }) {
-  return (
-    <label className="block space-y-1">
-      <span className="text-sm font-medium text-slate-700">{label}</span>
-      <input type={type} value={txt(value)} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
-    </label>
-  );
-}
-
 function Area({ label, value, onChange, placeholder = "" }) {
   return (
     <label className="block space-y-1 md:col-span-2">
       <span className="text-sm font-medium text-slate-700">{label}</span>
       <textarea value={txt(value)} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} className="min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
-    </label>
-  );
-}
-
-function SelectField({ label, value, onChange, options, danger = false }) {
-  const selectClass = danger
-    ? "w-full rounded-2xl border border-red-700 bg-red-600 px-3 py-2 text-sm font-bold text-white shadow-sm outline-none transition placeholder:text-red-100 focus:border-red-900 focus:ring-2 focus:ring-red-300"
-    : "w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200";
-
-  return (
-    <label className="block space-y-1">
-      <span className={danger ? "text-sm font-black text-red-700" : "text-sm font-medium text-slate-700"}>{label}</span>
-      <select value={txt(value)} onChange={(e) => onChange(e.target.value)} className={selectClass}>
-        <option value="">Sélectionner...</option>
-        {options.map((option) => (
-          <option key={option} value={option}>{option}</option>
-        ))}
-      </select>
-      
-    </label>
-  );
-}
-
-function Check({ label, checked, onChange, danger = false }) {
-  const boxClass = danger
-    ? "flex items-center gap-3 rounded-2xl border border-red-700 bg-red-600 p-3 text-sm font-black text-white shadow-sm"
-    : "flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-sm shadow-sm";
-
-  return (
-    <label className={boxClass}>
-      <input type="checkbox" checked={Boolean(checked)} onChange={(e) => onChange(e.target.checked)} className="h-5 w-5 accent-blue-600" />
-      <span>{label}</span>
     </label>
   );
 }
@@ -338,11 +141,6 @@ function PhotoInput({ onAddPhotos }) {
       />
     </label>
   );
-}
-
-function Button({ children, onClick, variant = "solid" }) {
-  const styles = variant === "outline" ? "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50" : "bg-slate-950 text-white hover:bg-slate-800";
-  return <button type="button" onClick={onClick} className={`rounded-2xl px-4 py-2 text-sm font-semibold shadow-sm transition active:scale-[0.99] ${styles}`}>{children}</button>;
 }
 
 function Badge({ children, danger }) {
