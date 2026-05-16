@@ -48,16 +48,10 @@ export default function DepartTab({ data, set }) {
             placeholder="Terminal, piste, avion, porte..."
           />
 
-          <Field
+          <SelectField
             label="Nature d’intervention"
             value={data.intervention.nature}
             onChange={(v) => set(["intervention", "nature"], v)}
-          />
-
-          <SelectField
-            label="Type"
-            value={data.identite.victime}
-            onChange={(v) => set(["identite", "victime"], v)}
             options={OPTIONS.typeVictime}
           />
 
