@@ -8,6 +8,7 @@ import DepartTab from "./components/tabs/DepartTab";
 import PrimaireTab from "./components/tabs/PrimaireTab";
 import SecondaireTab from "./components/tabs/SecondaireTab";
 import GestesTab from "./components/tabs/GestesTab";
+import LiaisonSdisTab from "./components/tabs/LiaisonSdisTab";
 import {
   getScore,
   calculateGlasgow,
@@ -116,9 +117,118 @@ function runSelfTests() {
 }
 runSelfTests();
 
-function TabButton({ id, active, onClick, children }) {
-  const activeClasses = active === id ? "bg-slate-950 text-white" : "bg-white text-slate-700 hover:bg-slate-100";
-  return <button type="button" onClick={() => onClick(id)} className={`rounded-2xl px-3 py-2 text-sm font-semibold transition ${activeClasses}`}>{children}</button>;
+function TabButton({ id, active, onClick, completed, children }) {
+  const activeClasses = active === id
+    ? "bg-slate-950 text-white"
+    : completed
+      ? "bg-emerald-600 text-white hover:bg-emerald-700"
+      : "bg-white text-slate-700 hover:bg-slate-100";
+
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(id)}
+      className={`rounded-2xl px-3 py-2 text-sm font-semibold transition ${activeClasses}`}
+    >
+      {children}
+      {completed ? <span className="ml-2">✓</span> : null}
+    </button>
+  );
+}
+
+function hasUserData(value, initialValue) {
+  if (value === null || value === undefined) return false;
+
+  if (typeof value === "boolean") {
+    return value !== Boolean(initialValue);
+  }
+
+  if (typeof value === "number") {
+    return value !== initialValue;
+  }
+
+  if (typeof value === "string") {
+    const current = value.trim();
+    const initial = typeof initialValue === "string" ? initialValue.trim() : "";
+    return current.length > 0 && current !== initial;
+  }
+
+  if (Array.isArray(value)) {
+    const initialArray = Array.isArray(initialValue) ? initialValue : [];
+
+    if (value.length !== initialArray.length) {
+      return value.some((item) => hasUserData(item, undefined));
+    }
+
+    return value.some((item, index) => hasUserData(item, initialArray[index]));
+  }
+
+  if (typeof value === "object") {
+    const initialObject = initialValue && typeof initialValue === "object" ? initialValue : {};
+    return Object.keys(value).some((key) => hasUserData(value[key], initialObject[key]));
+  }
+
+  return false;
+}
+
+const TAB_ORDER = [
+  { id: "depart", label: "Départ" },
+  { id: "primaire", label: "Primaire" },
+  { id: "secondaire", label: "Secondaire" },
+  { id: "gestes", label: "Gestes" },
+  { id: "samu", label: "SAMU" },
+  { id: "liaison", label: "Liaison SDIS" },
+  { id: "resume", label: "Résumé" },
+];
+
+function getTabCompletion(data) {
+  return {
+    depart:
+      hasUserData(data.intervention, INITIAL_DATA.intervention) ||
+      hasUserData(data.identite, INITIAL_DATA.identite) ||
+      hasUserData(data.circonstanciel, INITIAL_DATA.circonstanciel),
+    primaire: hasUserData(data.primaire, INITIAL_DATA.primaire),
+    secondaire: hasUserData(data.secondaire, INITIAL_DATA.secondaire),
+    gestes:
+      hasUserData(data.gestes, INITIAL_DATA.gestes) ||
+      hasUserData(data.surveillance, INITIAL_DATA.surveillance) ||
+      hasUserData(data.photos, INITIAL_DATA.photos),
+    samu: hasUserData(data.samu, INITIAL_DATA.samu),
+    liaison: hasUserData(data.aeronautique, INITIAL_DATA.aeronautique),
+    resume: false,
+  };
+}
+
+function BottomTabNavigation({ active, setActive }) {
+  const currentIndex = TAB_ORDER.findIndex((tab) => tab.id === active);
+  const previousTab = currentIndex > 0 ? TAB_ORDER[currentIndex - 1] : null;
+  const nextTab = currentIndex >= 0 && currentIndex < TAB_ORDER.length - 1 ? TAB_ORDER[currentIndex + 1] : null;
+
+  return (
+    <div className="sticky bottom-3 z-20 mt-4 flex items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur">
+      <button
+        type="button"
+        disabled={!previousTab}
+        onClick={() => previousTab && setActive(previousTab.id)}
+        className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-800 shadow-sm disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        ← {previousTab ? previousTab.label : "Début"}
+      </button>
+
+      <div className="text-center text-xs font-bold text-slate-500">
+        Navigation rapide
+      </div>
+
+      <button
+        type="button"
+        disabled={!nextTab}
+        onClick={() => nextTab && setActive(nextTab.id)}
+        className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        {nextTab ? nextTab.label : "Fin"} →
+      </button>
+    </div>
+  );
 }
 
 function AppHeader({ detresseVitale }) {
@@ -204,6 +314,7 @@ export default function App() {
   const reset = () => setData(clone(INITIAL_DATA));
   const detresseVitale = useMemo(() => hasDetresseVitale(data), [data]);
   const resume = useMemo(() => buildResume(data), [data]);
+  const tabCompletion = useMemo(() => getTabCompletion(data), [data]);
 
   const copyResume = async () => {
     try {
@@ -227,20 +338,27 @@ export default function App() {
     <main className="min-h-screen bg-slate-100 p-3 md:p-6">
       <div className="mx-auto max-w-6xl space-y-4">
         <AppHeader detresseVitale={detresseVitale} />
-        <nav className="grid grid-cols-2 gap-2 rounded-3xl bg-white p-2 shadow-sm md:grid-cols-6">
-          <TabButton id="depart" active={active} onClick={setActive}>Départ</TabButton>
-          <TabButton id="primaire" active={active} onClick={setActive}>Primaire</TabButton>
-          <TabButton id="secondaire" active={active} onClick={setActive}>Secondaire</TabButton>
-          <TabButton id="gestes" active={active} onClick={setActive}>Gestes</TabButton>
-          <TabButton id="samu" active={active} onClick={setActive}>SAMU</TabButton>
-          <TabButton id="resume" active={active} onClick={setActive}>Résumé</TabButton>
+        <nav className="grid grid-cols-2 gap-2 rounded-3xl bg-white p-2 shadow-sm md:grid-cols-4 lg:grid-cols-7">
+          {TAB_ORDER.map((tab) => (
+            <TabButton
+              key={tab.id}
+              id={tab.id}
+              active={active}
+              onClick={setActive}
+              completed={tabCompletion[tab.id]}
+            >
+              {tab.label}
+            </TabButton>
+          ))}
         </nav>
         {active === "depart" ? <DepartTab data={data} set={set} /> : null}
         {active === "primaire" ? <PrimaireTab data={data} set={set} detresseVitale={detresseVitale} /> : null}
         {active === "secondaire" ? <SecondaireTab data={data} set={set} /> : null}
         {active === "gestes" ? <GestesTab data={data} set={set} updateSurveillance={updateSurveillance} addSurveillance={addSurveillance} onAddPhotos={addPhotos} onRemovePhoto={removePhoto} /> : null}
         {active === "samu" ? <SamuTab data={data} set={set} /> : null}
+        {active === "liaison" ? <LiaisonSdisTab data={data} set={set} /> : null}
         {active === "resume" ? <ResumeTab resume={resume} copyResume={copyResume} sendMail={sendMail} printPdf={printPdf} reset={reset} /> : null}
+        <BottomTabNavigation active={active} setActive={setActive} />
       </div>
     </main>
   );

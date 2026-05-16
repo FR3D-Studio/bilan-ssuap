@@ -24,7 +24,7 @@ export const INITIAL_DATA = {
     prenom: "",
     age: "",
     sexe: "",
-    victime: "Malaise/Maladie",
+    victime: "",
     natureVictime: "",
     societe: "",
     nationalite: "",
@@ -142,6 +142,17 @@ export const INITIAL_DATA = {
     refusSignatureTemoin1: "",
     refusNomTemoin2: "",
     refusSignatureTemoin2: "",
+  },
+
+  aeronautique: {
+    typeAvion: "",
+    compagnie: "",
+    provenance: "",
+    destination: "",
+    numeroVol: "",
+    immatriculation: "",
+   nombrePax: "",
+   nombrePob: "",
   },
 
   surveillance: [{ ...BLANK_SURVEILLANCE }],
