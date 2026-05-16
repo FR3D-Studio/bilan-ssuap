@@ -27,6 +27,7 @@ export const INITIAL_DATA = {
     victime: "Malaise/Maladie",
     natureVictime: "",
     societe: "",
+    nationalite: "",
   },
 
   circonstanciel: {

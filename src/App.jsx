@@ -1,14 +1,13 @@
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle, ClipboardList, HeartPulse, Send, ShieldCheck, Stethoscope, TimerReset } from "lucide-react";
-import { OPTIONS, GLASGOW, MALINAS } from "./data/options";
 import { INITIAL_DATA, BLANK_SURVEILLANCE } from "./data/initialData";
-import Field from "./components/ui/Field";
-import SelectField from "./components/ui/SelectField";
-import Check from "./components/ui/Check";
-import Button from "./components/ui/Button";
-import CardBlock from "./components/ui/CardBlock";
 import Badge from "./components/ui/Badge";
+import ResumeTab from "./components/tabs/ResumeTab";
+import SamuTab from "./components/tabs/SamuTab";
+import DepartTab from "./components/tabs/DepartTab";
+import PrimaireTab from "./components/tabs/PrimaireTab";
+import SecondaireTab from "./components/tabs/SecondaireTab";
+import GestesTab from "./components/tabs/GestesTab";
 import {
   getScore,
   calculateGlasgow,
@@ -18,8 +17,6 @@ import {
   isRespiratoryDistressQuality,
   hasDetresseVitale,
 } from "./utils/scores";
-import ResumeTab from "./components/tabs/ResumeTab";
-import SamuTab from "./components/tabs/SamuTab";
 
 const txt = (value) => (value === null || value === undefined ? "" : String(value));
 const yesNo = (value) => (value ? "OUI" : "NON");
@@ -119,47 +116,9 @@ function runSelfTests() {
 }
 runSelfTests();
 
-function Area({ label, value, onChange, placeholder = "" }) {
-  return (
-    <label className="block space-y-1 md:col-span-2">
-      <span className="text-sm font-medium text-slate-700">{label}</span>
-      <textarea value={txt(value)} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} className="min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
-    </label>
-  );
-}
-
-function PhotoInput({ onAddPhotos }) {
-  return (
-    <label className="inline-flex cursor-pointer items-center justify-center rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition active:scale-[0.99] hover:bg-slate-800">
-      Prendre / ajouter photo
-      <input
-        type="file"
-        accept="image/*"
-        capture="environment"
-        multiple
-        className="hidden"
-        onChange={(e) => {
-          onAddPhotos(Array.from(e.target.files || []));
-          e.target.value = "";
-        }}
-      />
-    </label>
-  );
-}
-
 function TabButton({ id, active, onClick, children }) {
   const activeClasses = active === id ? "bg-slate-950 text-white" : "bg-white text-slate-700 hover:bg-slate-100";
   return <button type="button" onClick={() => onClick(id)} className={`rounded-2xl px-3 py-2 text-sm font-semibold transition ${activeClasses}`}>{children}</button>;
-}
-
-function ScoreCard({ title, value, danger, children }) {
-  return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 className="mb-3 text-base font-bold text-slate-900">{title}</h3>
-      {children}
-      <div className={`mt-3 rounded-2xl p-3 text-center text-2xl font-black text-white ${danger ? "bg-red-600" : "bg-slate-950"}`}>{value}</div>
-    </div>
-  );
 }
 
 function AppHeader({ detresseVitale }) {
@@ -174,301 +133,6 @@ function AppHeader({ detresseVitale }) {
       </div>
       <p className="mt-3 rounded-2xl bg-white/10 p-3 text-xs text-slate-200">Outil d’aide à la structuration du bilan. La décision opérationnelle et médicale relève des procédures en vigueur, du CA et de la régulation SAMU.</p>
     </motion.header>
-  );
-}
-
-function DepartTab({ data, set }) {
-  return (
-    <div className="space-y-4">
-      <CardBlock title="1. Sécurité / intervention" icon={ShieldCheck} tone="blue">
-        <div className="grid gap-3 md:grid-cols-2">
-          <Field label="Date / heure" value={data.intervention.dateHeure} onChange={(v) => set(["intervention", "dateHeure"], v)} />
-          <Field label="Adresse" value={data.intervention.adresse} onChange={(v) => set(["intervention", "adresse"], v)} />
-          <Field label="Nature d’intervention" value={data.intervention.nature} onChange={(v) => set(["intervention", "nature"], v)} />
-          <Field label="Renforts demandés / présents" value={data.intervention.renforts} onChange={(v) => set(["intervention", "renforts"], v)} />
-          <Area label="Dangers / contexte / sécurité" value={data.intervention.dangers} onChange={(v) => set(["intervention", "dangers"], v)} />
-          <Check label="Sécurité réalisée" checked={data.intervention.securite} onChange={(v) => set(["intervention", "securite"], v)} />
-        </div>
-      </CardBlock>
-      <CardBlock title="2. Identification / circonstanciel" icon={ClipboardList}>
-        <div className="grid gap-3 md:grid-cols-2">
-          <Field label="Nom" value={data.identite.nom} onChange={(v) => set(["identite", "nom"], v)} />
-          <Field label="Prénom" value={data.identite.prenom} onChange={(v) => set(["identite", "prenom"], v)} />
-          <Field label="Âge" value={data.identite.age} onChange={(v) => set(["identite", "age"], v)} />
-          <Field label="Sexe" value={data.identite.sexe} onChange={(v) => set(["identite", "sexe"], v)} />
-          <SelectField
-            label="Type"
-            value={data.identite.victime}
-            onChange={(v) => set(["identite", "victime"], v)}
-            options={[
-              "Malaise/Maladie",
-              "Intoxication",
-              "Brulure",
-              "Electrisation",
-              "Plaie",
-              "Chute",
-              "AVP",
-              "Accident du travail",
-              "Incendie",
-              "Explosion",
-              "Trouble du comportement",
-              "Social",
-              "Autre traumatisme",
-            ]}
-          />
-
-          <div className="space-y-3">
-            <SelectField
-              label="Nature de la victime"
-              value={data.identite.natureVictime}
-              onChange={(v) => set(["identite", "natureVictime"], v)}
-              options={[
-                "PAX",
-                "PNC",
-                "Accompagnant",
-                "Salarié sous traitant",
-                "Salarié société Aéroportuaire",
-              ]}
-            />
-
-            <Field
-              label="Nom de la société"
-              value={data.identite.societe}
-              onChange={(v) => set(["identite", "societe"], v)}
-              placeholder="Nom entreprise / société"
-            />
-          </div>
-          <Area label="Circonstances" value={data.circonstanciel.circonstances} onChange={(v) => set(["circonstanciel", "circonstances"], v)} />
-          <Area label="Plainte principale" value={data.circonstanciel.plainte} onChange={(v) => set(["circonstanciel", "plainte"], v)} />
-          <Area label="Gestes déjà réalisés par témoins" value={data.circonstanciel.gestesTemoins} onChange={(v) => set(["circonstanciel", "gestesTemoins"], v)} />
-        </div>
-      </CardBlock>
-    </div>
-  );
-}
-
-function PrimaireTab({ data, set, detresseVitale }) {
-  const glasgow = calculateGlasgow(data);
-  return (
-    <CardBlock title="Bilan primaire XABCDE" icon={HeartPulse} tone="red">
-      <div className="grid gap-3 md:grid-cols-2">
-        <Check label="X : hémorragie externe grave" checked={data.primaire.xHemorragie} onChange={(v) => set(["primaire", "xHemorragie"], v)} />
-        <Field label="X : action réalisée" value={data.primaire.xAction} onChange={(v) => set(["primaire", "xAction"], v)} placeholder="compression, pansement, garrot..." />
-        <SelectField label="A : voies aériennes" value={data.primaire.aVA} onChange={(v) => set(["primaire", "aVA"], v)} options={OPTIONS.voiesAeriennes} />
-        <Check label="A : suspicion rachis / stabilisation" checked={data.primaire.aRachis} onChange={(v) => set(["primaire", "aRachis"], v)} />
-        <SelectField
-          label="B : qualité respiration"
-          value={data.primaire.bQualite}
-          danger={isRespiratoryDistressQuality(data.primaire.bQualite)}
-          onChange={(v) => {
-            set(["primaire", "bQualite"], v);
-            set(["primaire", "bDetresse"], isRespiratoryDistressQuality(v));
-          }}
-          options={OPTIONS.respiration}
-        />
-        <Field label="B : FR" value={data.primaire.bFR} onChange={(v) => set(["primaire", "bFR"], v)} />
-        <Field label="B : SpO₂" value={data.primaire.bSpO2} onChange={(v) => set(["primaire", "bSpO2"], v)} />
-        <Check label={data.primaire.bDetresse ? "B : détresse respiratoire / Appel SAMU immédiat" : "B : détresse respiratoire"} checked={data.primaire.bDetresse} danger={data.primaire.bDetresse} onChange={(v) => set(["primaire", "bDetresse"], v)} />
-        
-        <SelectField
-          label="C : pouls"
-          value={data.primaire.cPouls}
-          danger={data.primaire.cPouls === "Non perçu"}
-          onChange={(v) => {
-            set(["primaire", "cPouls"], v);
-            set(["primaire", "cDetresse"], v === "Non perçu");
-          }}
-          options={OPTIONS.pouls}
-        />
-        <Field label="C : FC" value={data.primaire.cFC} onChange={(v) => set(["primaire", "cFC"], v)} />
-        <Field label="C : TA" value={data.primaire.cTA} onChange={(v) => set(["primaire", "cTA"], v)} />
-        <Field label="C : TRC" value={data.primaire.cTRC} onChange={(v) => set(["primaire", "cTRC"], v)} />
-        <Check label={data.primaire.cDetresse ? "C : détresse circulatoire / Appel SAMU immédiat" : "C : détresse circulatoire"} checked={data.primaire.cDetresse} danger={data.primaire.cDetresse} onChange={(v) => set(["primaire", "cDetresse"], v)} />
-        <div className="md:col-span-2">
-          <ScoreCard title="Score de Glasgow" value={`Glasgow total : ${glasgow}`} danger={glasgow >= 3 && glasgow <= 7}>
-            <div className="grid gap-3 md:grid-cols-4">
-              <SelectField label="Ouverture des yeux" value={data.primaire.glasgowYeux} onChange={(v) => set(["primaire", "glasgowYeux"], v)} options={GLASGOW.eyes} />
-              <SelectField label="Réponse verbale" value={data.primaire.glasgowVerbal} onChange={(v) => set(["primaire", "glasgowVerbal"], v)} options={GLASGOW.verbal} />
-              <SelectField label="Réponse motrice" value={data.primaire.glasgowMoteur} onChange={(v) => set(["primaire", "glasgowMoteur"], v)} options={GLASGOW.motor} />
-            </div>
-            {glasgow >= 3 && glasgow <= 7 ? <div className="mt-3 rounded-2xl bg-red-100 p-3 text-center font-bold text-red-800"><AlertTriangle className="mr-2 inline h-5 w-5" />Glasgow 3 à 7 : avis médical urgent</div> : null}
-          </ScoreCard>
-        </div>
-        <SelectField label="D : conscience" value={data.primaire.dConscience} onChange={(v) => set(["primaire", "dConscience"], v)} options={OPTIONS.conscience} />
-        <Area label="D : signes neurologiques" value={data.primaire.dNeuro} onChange={(v) => set(["primaire", "dNeuro"], v)} />
-        <Area label="E : lésions / exposition" value={data.primaire.eLesions} onChange={(v) => set(["primaire", "eLesions"], v)} />
-      </div>
-      {detresseVitale ? <div className="rounded-2xl bg-red-600 p-3 font-semibold text-white"><AlertTriangle className="mr-2 inline h-5 w-5" />Transmission urgente SAMU / bilan rouge à envisager selon procédure.</div> : null}
-    </CardBlock>
-  );
-}
-
-function SecondaireTab({ data, set }) {
-  const s = data.secondaire;
-  const malinas = calculateMalinas(s);
-  const wallace = calculateWallace(s);
-  const fast = isFastPositive(s);
-  return (
-    <CardBlock title="Bilan secondaire : PQRST + MHTA + paramètres" icon={Stethoscope} tone="green">
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-3xl border border-emerald-100 bg-white p-4 shadow-sm">
-          <h3 className="mb-3 text-base font-bold text-slate-900">PQRST</h3>
-          <div className="grid gap-3">
-            <Field label="P - Provoqué par" value={s.pqrstP} onChange={(v) => set(["secondaire", "pqrstP"], v)} />
-            <Field label="Q - Qualité" value={s.pqrstQ} onChange={(v) => set(["secondaire", "pqrstQ"], v)} />
-            <Field label="R - Région / irradiation" value={s.pqrstR} onChange={(v) => set(["secondaire", "pqrstR"], v)} />
-            <Field label="S - Sévérité / EVN" value={s.pqrstS} onChange={(v) => set(["secondaire", "pqrstS"], v)} />
-            <Field label="T - Temps / évolution" value={s.pqrstT} onChange={(v) => set(["secondaire", "pqrstT"], v)} />
-          </div>
-        </div>
-        <div className="rounded-3xl border border-emerald-100 bg-white p-4 shadow-sm">
-          <h3 className="mb-3 text-base font-bold text-slate-900">MHTA</h3>
-          <div className="grid gap-3">
-            <Field label="M - Maladie / antécédents" value={s.maladie} onChange={(v) => set(["secondaire", "maladie"], v)} />
-            <Field label="H - Hospitalisations" value={s.hospitalisation} onChange={(v) => set(["secondaire", "hospitalisation"], v)} />
-            <Field label="T - Traitements" value={s.traitement} onChange={(v) => set(["secondaire", "traitement"], v)} />
-            <Field label="A - Allergies" value={s.allergie} onChange={(v) => set(["secondaire", "allergie"], v)} />
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-emerald-100 bg-white p-4 shadow-sm">
-        <h3 className="mb-3 text-base font-bold text-slate-900">FAST AVC</h3>
-        <div className="grid gap-3 md:grid-cols-3">
-          <Check label="Face" checked={s.fastFace} onChange={(v) => set(["secondaire", "fastFace"], v)} />
-          <Check label="Arm" checked={s.fastArm} onChange={(v) => set(["secondaire", "fastArm"], v)} />
-          <Check label="Speech" checked={s.fastSpeech} onChange={(v) => set(["secondaire", "fastSpeech"], v)} />
-          <Field label="Time / début symptômes" value={s.fastTime} onChange={(v) => set(["secondaire", "fastTime"], v)} placeholder="Ex : 14h32" />
-        </div>
-        <div className={`mt-3 rounded-2xl p-3 font-semibold ${fast ? "bg-red-600 text-white" : "bg-slate-100 text-slate-900"}`}>FAST : {fast ? "POSITIF" : "NÉGATIF / NON RETROUVÉ"}</div>
-      </div>
-
-      <ScoreCard title="Score de Malinas" value={`Malinas : ${malinas}`} danger={malinas >= 5}>
-        <div className="grid gap-3 md:grid-cols-2">
-          <SelectField label="Parité" value={s.malinasParite} onChange={(v) => set(["secondaire", "malinasParite"], v)} options={MALINAS.parite} />
-          <SelectField label="Durée travail" value={s.malinasTravail} onChange={(v) => set(["secondaire", "malinasTravail"], v)} options={MALINAS.travail} />
-          <SelectField label="Durée contractions" value={s.malinasContractions} onChange={(v) => set(["secondaire", "malinasContractions"], v)} options={MALINAS.contractions} />
-          <SelectField label="Intervalle contractions" value={s.malinasIntervalle} onChange={(v) => set(["secondaire", "malinasIntervalle"], v)} options={MALINAS.intervalle} />
-          <SelectField label="Perte des eaux" value={s.malinasEaux} onChange={(v) => set(["secondaire", "malinasEaux"], v)} options={MALINAS.eaux} />
-        </div>
-        {malinas >= 5 ? <div className="mt-3 rounded-2xl bg-red-100 p-3 text-center font-bold text-red-800"><AlertTriangle className="mr-2 inline h-5 w-5" />Accouchement imminent : préparer prise en charge sur place et prévenir rapidement le SAMU.</div> : null}
-      </ScoreCard>
-
-      <ScoreCard title="Règle de Wallace" value={`Surface brûlée : ${wallace}%`} danger={false}>
-        <p className="mb-3 rounded-2xl bg-amber-50 p-3 text-sm font-semibold text-amber-900">Contrôler systématiquement la face antérieure ET la face postérieure de la victime. Mode adulte et enfant disponibles selon l’âge de la victime.</p>
-        <div className="mb-3">
-          <SelectField label="Mode d’évaluation" value={s.wallaceMode} onChange={(v) => set(["secondaire", "wallaceMode"], v)} options={["Adulte - règle des 9", "Enfant - règle adaptée", "Paume = 1%"]} />
-        </div>
-        {s.wallaceMode === "Paume = 1%" ? (
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-            <Field label="Nombre de paumes de la victime brûlées" value={s.wallacePaumes} onChange={(v) => set(["secondaire", "wallacePaumes"], v)} placeholder="1 paume = environ 1%" />
-            <div className="mt-3 rounded-2xl border border-dashed border-slate-300 bg-white p-3 text-sm text-slate-600">Méthode utile pour les petites brûlures : la paume de la victime représente environ 1% de la surface corporelle.</div>
-          </div>
-        ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-              <h4 className="mb-3 font-bold text-slate-900">Face antérieure</h4>
-              <div className="grid gap-3 md:grid-cols-2">
-                <Check label={s.wallaceMode === "Enfant - règle adaptée" ? "Tête / face avant 8,5%" : "Tête / face avant 4,5%"} checked={s.wallaceTeteAvant} onChange={(v) => set(["secondaire", "wallaceTeteAvant"], v)} />
-                <Check label="Bras droit avant 4,5%" checked={s.wallaceBrasDroitAvant} onChange={(v) => set(["secondaire", "wallaceBrasDroitAvant"], v)} />
-                <Check label="Bras gauche avant 4,5%" checked={s.wallaceBrasGaucheAvant} onChange={(v) => set(["secondaire", "wallaceBrasGaucheAvant"], v)} />
-                <Check label="Tronc avant 18%" checked={s.wallaceTroncAvant} onChange={(v) => set(["secondaire", "wallaceTroncAvant"], v)} />
-                <Check label={s.wallaceMode === "Enfant - règle adaptée" ? "Jambe droite avant 7%" : "Jambe droite avant 9%"} checked={s.wallaceJambeDroiteAvant} onChange={(v) => set(["secondaire", "wallaceJambeDroiteAvant"], v)} />
-                <Check label={s.wallaceMode === "Enfant - règle adaptée" ? "Jambe gauche avant 7%" : "Jambe gauche avant 9%"} checked={s.wallaceJambeGaucheAvant} onChange={(v) => set(["secondaire", "wallaceJambeGaucheAvant"], v)} />
-                <Check label="Périnée 1%" checked={s.wallacePerinee} onChange={(v) => set(["secondaire", "wallacePerinee"], v)} />
-              </div>
-            </div>
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-              <h4 className="mb-3 font-bold text-slate-900">Face postérieure</h4>
-              <div className="grid gap-3 md:grid-cols-2">
-                <Check label={s.wallaceMode === "Enfant - règle adaptée" ? "Tête arrière 8,5%" : "Tête arrière 4,5%"} checked={s.wallaceTeteArriere} onChange={(v) => set(["secondaire", "wallaceTeteArriere"], v)} />
-                <Check label="Bras droit arrière 4,5%" checked={s.wallaceBrasDroitArriere} onChange={(v) => set(["secondaire", "wallaceBrasDroitArriere"], v)} />
-                <Check label="Bras gauche arrière 4,5%" checked={s.wallaceBrasGaucheArriere} onChange={(v) => set(["secondaire", "wallaceBrasGaucheArriere"], v)} />
-                <Check label="Dos / tronc arrière 18%" checked={s.wallaceTroncArriere} onChange={(v) => set(["secondaire", "wallaceTroncArriere"], v)} />
-                <Check label={s.wallaceMode === "Enfant - règle adaptée" ? "Jambe droite arrière 7%" : "Jambe droite arrière 9%"} checked={s.wallaceJambeDroiteArriere} onChange={(v) => set(["secondaire", "wallaceJambeDroiteArriere"], v)} />
-                <Check label={s.wallaceMode === "Enfant - règle adaptée" ? "Jambe gauche arrière 7%" : "Jambe gauche arrière 9%"} checked={s.wallaceJambeGaucheArriere} onChange={(v) => set(["secondaire", "wallaceJambeGaucheArriere"], v)} />
-              </div>
-              <div className="mt-3 rounded-2xl border border-dashed border-slate-300 bg-white p-3 text-sm text-slate-600">Retourner / inspecter la victime selon la situation et la sécurité, pour ne pas oublier les lésions postérieures.</div>
-            </div>
-          </div>
-        )}
-      </ScoreCard>
-
-      <div className="rounded-3xl border border-emerald-100 bg-white p-4 shadow-sm">
-        <h3 className="mb-3 text-base font-bold text-slate-900">Paramètres / examens complémentaires</h3>
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-          <Field label="EVN" value={s.evn} onChange={(v) => set(["secondaire", "evn"], v)} />
-          <Field label="Glycémie" value={s.glycemie} onChange={(v) => set(["secondaire", "glycemie"], v)} />
-          <Field label="Température" value={s.temperature} onChange={(v) => set(["secondaire", "temperature"], v)} />
-        </div>
-      </div>
-    </CardBlock>
-  );
-}
-
-function PhotosBlock({ photos, onAddPhotos, onRemovePhoto }) {
-  return (
-    <CardBlock title="Photos intervention" icon={ClipboardList} tone="slate">
-      <div className="space-y-3">
-        <div className="rounded-2xl bg-amber-50 p-3 text-sm font-semibold text-amber-900">
-          Photos conservées localement dans le bilan en cours. Attention aux données personnelles et médicales.
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <PhotoInput onAddPhotos={onAddPhotos} />
-          <span className="text-sm font-semibold text-slate-700">{photoCountText(photos)}</span>
-        </div>
-        {photos.length > 0 ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {photos.map((photo) => (
-              <div key={photo.id} className="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
-                <img src={photo.dataUrl} alt={photo.name || "Photo intervention"} className="h-48 w-full rounded-2xl object-cover" />
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  <span className="truncate text-xs font-semibold text-slate-600">{photo.name || "Photo"}</span>
-                  <Button variant="outline" onClick={() => onRemovePhoto(photo.id)}>Supprimer</Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : null}
-      </div>
-    </CardBlock>
-  );
-}
-
-function GestesTab({ data, set, updateSurveillance, addSurveillance, onAddPhotos, onRemovePhoto }) {
-  const surveillance = Array.isArray(data.surveillance) ? data.surveillance : [];
-  return (
-    <div className="space-y-4">
-      <CardBlock title="Gestes réalisés / conditionnement" icon={ShieldCheck} tone="amber">
-        <div className="grid gap-3 md:grid-cols-2">
-          <Check label="O₂ administré" checked={data.gestes.oxygene} onChange={(v) => set(["gestes", "oxygene"], v)} />
-          <Field label="Débit O₂" value={data.gestes.o2Debit} onChange={(v) => set(["gestes", "o2Debit"], v)} />
-          <SelectField label="Position" value={data.gestes.position} onChange={(v) => set(["gestes", "position"], v)} options={OPTIONS.position} />
-          <Check label="Immobilisation" checked={data.gestes.immobilisation} onChange={(v) => set(["gestes", "immobilisation"], v)} />
-          <Check label="Pansement / protection" checked={data.gestes.pansement} onChange={(v) => set(["gestes", "pansement"], v)} />
-          <Field label="ASU sur prescription médicale / soins réalisés" value={data.gestes.asu} onChange={(v) => set(["gestes", "asu"], v)} placeholder="ex : ECG, hémoglobinémie, traitement prescrit, autre soin..." />
-          <Area label="Autres gestes" value={data.gestes.autres} onChange={(v) => set(["gestes", "autres"], v)} />
-        </div>
-      </CardBlock>
-      <CardBlock title="Surveillance" icon={TimerReset}>
-        <div className="space-y-3">
-          {surveillance.map((s, i) => (
-            <div key={`surveillance-${i}`} className="grid gap-2 rounded-3xl border border-slate-200 bg-white p-3 md:grid-cols-8">
-              <Field label="Heure" value={s?.heure} onChange={(v) => updateSurveillance(i, "heure", v)} />
-              <Field label="FR" value={s?.fr} onChange={(v) => updateSurveillance(i, "fr", v)} />
-              <Field label="SpO₂" value={s?.spo2} onChange={(v) => updateSurveillance(i, "spo2", v)} />
-              <Field label="FC" value={s?.fc} onChange={(v) => updateSurveillance(i, "fc", v)} />
-              <Field label="TA" value={s?.ta} onChange={(v) => updateSurveillance(i, "ta", v)} />
-              <Field label="Glasgow" value={s?.glasgow} onChange={(v) => updateSurveillance(i, "glasgow", v)} />
-              <Field label="EVN" value={s?.evn} onChange={(v) => updateSurveillance(i, "evn", v)} />
-              <Field label="Notes" value={s?.notes} onChange={(v) => updateSurveillance(i, "notes", v)} />
-            </div>
-          ))}
-          <Button onClick={addSurveillance}>Ajouter une surveillance</Button>
-        </div>
-      </CardBlock>
-      <PhotosBlock photos={data.photos || []} onAddPhotos={onAddPhotos} onRemovePhoto={onRemovePhoto} />
-    </div>
   );
 }
 
