@@ -18,6 +18,8 @@ import {
   isRespiratoryDistressQuality,
   hasDetresseVitale,
 } from "./utils/scores";
+import ResumeTab from "./components/tabs/ResumeTab";
+import SamuTab from "./components/tabs/SamuTab";
 
 const txt = (value) => (value === null || value === undefined ? "" : String(value));
 const yesNo = (value) => (value ? "OUI" : "NON");
@@ -142,33 +144,6 @@ function PhotoInput({ onAddPhotos }) {
         }}
       />
     </label>
-  );
-}
-
-function NoviBadge({ value }) {
-  const cleanValue = normalizeNovi(value);
-  const styles = {
-    "Urgence absolue": "bg-red-600 text-white border-red-700",
-    "Urgence relative": "bg-yellow-400 text-slate-900 border-yellow-500",
-    "Impliqué / indemne": "bg-green-600 text-white border-green-700",
-    "Décédé": "bg-black text-white border-black",
-    "Non concerné": "bg-slate-200 text-slate-800 border-slate-300",
-  };
-  const dots = {
-    "Urgence absolue": "🔴",
-    "Urgence relative": "🟡",
-    "Impliqué / indemne": "🟢",
-    "Décédé": "⚫",
-    "Non concerné": "⚪",
-  };
-  const style = styles[cleanValue] || styles["Non concerné"];
-  const dot = dots[cleanValue] || dots["Non concerné"];
-
-  return (
-    <div className={`inline-flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-black shadow-sm ${style}`}>
-      <span className="text-xl">{dot}</span>
-      <span>{cleanValue}</span>
-    </div>
   );
 }
 
@@ -494,38 +469,6 @@ function GestesTab({ data, set, updateSurveillance, addSurveillance, onAddPhotos
       </CardBlock>
       <PhotosBlock photos={data.photos || []} onAddPhotos={onAddPhotos} onRemovePhoto={onRemovePhoto} />
     </div>
-  );
-}
-
-function SamuTab({ data, set }) {
-  return (
-    <CardBlock title="Transmission SAMU / devenir" icon={Send} tone="blue">
-      <div className="space-y-3">
-        <div className="rounded-2xl bg-blue-50 p-3 text-sm font-semibold text-blue-900">Le tri NOVI sert au classement rapide en présence de nombreuses victimes. Il ne remplace pas la transmission du bilan au SAMU.</div>
-        <NoviBadge value={data.samu.couleur} />
-      </div>
-      <div className="grid gap-3 md:grid-cols-2">
-        <SelectField label="Tri NOVI / nombreuses victimes" value={data.samu.couleur} onChange={(v) => set(["samu", "couleur"], v)} options={OPTIONS.novi} />
-        <Field label="Heure transmission" value={data.samu.heureTransmission} onChange={(v) => set(["samu", "heureTransmission"], v)} />
-        <Field label="Décision SAMU" value={data.samu.decision} onChange={(v) => set(["samu", "decision"], v)} />
-        <Field label="Destination" value={data.samu.destination} onChange={(v) => set(["samu", "destination"], v)} />
-        <Area label="Consignes / notifications" value={data.samu.consignes} onChange={(v) => set(["samu", "consignes"], v)} />
-      </div>
-    </CardBlock>
-  );
-}
-
-function ResumeTab({ resume, copyResume, sendMail, printPdf, reset }) {
-  return (
-    <CardBlock title="Résumé copiable" icon={ClipboardList}>
-      <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-3xl bg-slate-950 p-4 text-xs text-slate-50 md:text-sm">{resume}</pre>
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={copyResume}>Copier le résumé</Button>
-        <Button onClick={sendMail}>Mail texte</Button>
-        <Button onClick={printPdf}>Imprimer / PDF</Button>
-        <Button variant="outline" onClick={reset}>Réinitialiser</Button>
-      </div>
-    </CardBlock>
   );
 }
 

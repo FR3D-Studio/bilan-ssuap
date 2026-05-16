@@ -130,6 +130,17 @@ export const INITIAL_DATA = {
     decision: "",
     destination: "",
     consignes: "",
+    vecteur: "",
+
+    refusEvacuationOk: false,
+    refusObservations: "",
+    
+    refusNomVictime: "",
+    refusSignatureVictime: "",
+    refusNomTemoin1: "",
+    refusSignatureTemoin1: "",
+    refusNomTemoin2: "",
+    refusSignatureTemoin2: "",
   },
 
   surveillance: [{ ...BLANK_SURVEILLANCE }],

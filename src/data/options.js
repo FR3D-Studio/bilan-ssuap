@@ -77,6 +77,13 @@ export const OPTIONS = {
     "Salarié sous traitant",
     "Salarié société Aéroportuaire",
   ],
+
+  vecteurTransport: [
+  "SDIS",
+  "ASSU",
+  "Moyen personnel",
+  "Refus d'évacuation par la victime",
+  ],
 };
 
 export const GLASGOW = {
