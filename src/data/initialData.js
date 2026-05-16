@@ -17,6 +17,7 @@ export const INITIAL_DATA = {
     dangers: "",
     securite: false,
     renforts: "",
+    lieu: "",
   },
 
   identite: {
@@ -28,6 +29,7 @@ export const INITIAL_DATA = {
     natureVictime: "",
     societe: "",
     nationalite: "",
+    adresse: "",
   },
 
   circonstanciel: {
