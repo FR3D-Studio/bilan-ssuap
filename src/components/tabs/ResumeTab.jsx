@@ -1,9 +1,11 @@
-import { ClipboardList } from "lucide-react";
+import { useRef } from "react";
+import { FileDown } from "lucide-react";
 
 import CardBlock from "../ui/CardBlock";
 import Button from "../ui/Button";
 
 import logoMedifire from "../../assets/logo-medifire.png";
+import { downloadElementAsPdf } from "../../utils/pdfExport";
 
 const SECTION_TITLES = new Set([
   "INTERVENTION",
@@ -38,12 +40,12 @@ function splitResumeSections(resume) {
   return sections;
 }
 
-function PrintableResume({ resume }) {
+function PrintableResume({ resume, pageRef }) {
   const sections = splitResumeSections(resume);
 
   return (
     <div className="print-only">
-      <div className="print-page">
+      <div ref={pageRef} className="print-page">
         <header className="relative mb-4 overflow-hidden border-b-4 border-black pb-4">
           <div className="absolute inset-0 opacity-[0.03]">
             <img src={logoMedifire} alt="" className="absolute right-0 top-[-30px] h-52 object-contain" />
@@ -114,6 +116,16 @@ export default function ResumeTab({
   printPdf,
   reset,
 }) {
+  const pageRef = useRef(null);
+
+  const downloadPdf = async () => {
+    try {
+      await downloadElementAsPdf(pageRef.current, "bilan-ssuap.pdf");
+    } catch {
+      printPdf();
+    }
+  };
+
   return (
     <>
       <style>
@@ -161,20 +173,20 @@ export default function ResumeTab({
         `}
       </style>
 
-      <CardBlock title="Résumé copiable" icon={ClipboardList}>
-        <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-3xl bg-slate-950 p-4 text-xs text-slate-50 md:text-sm">
+      <CardBlock title="Résumé copiable" icon={FileDown}>
+        <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-lg bg-slate-950 p-4 text-xs text-slate-50 md:text-sm">
           {resume}
         </pre>
 
         <div className="flex flex-wrap gap-2">
           <Button onClick={copyResume}>Copier le résumé</Button>
           <Button onClick={sendMail}>Mail texte</Button>
-          <Button onClick={printPdf}>Imprimer / PDF</Button>
+          <Button onClick={downloadPdf}>Télécharger PDF</Button>
           <Button variant="outline" onClick={reset}>Réinitialiser</Button>
         </div>
       </CardBlock>
 
-      <PrintableResume resume={resume} />
+      <PrintableResume resume={resume} pageRef={pageRef} />
     </>
   );
 }

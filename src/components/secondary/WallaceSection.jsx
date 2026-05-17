@@ -15,7 +15,7 @@ export default function WallaceSection({ s, set }) {
       value={`Surface brûlée : ${wallace}%`}
       danger={false}
     >
-      <p className="mb-3 rounded-2xl bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+      <p className="mb-3 rounded-lg bg-amber-50 p-3 text-sm font-semibold text-amber-900">
         Contrôler systématiquement la face antérieure ET la face postérieure de
         la victime. Mode adulte et enfant disponibles selon l’âge de la victime.
       </p>
@@ -34,7 +34,7 @@ export default function WallaceSection({ s, set }) {
       </div>
 
       {s.wallaceMode === "Paume = 1%" ? (
-        <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
           <Field
             label="Nombre de paumes de la victime brûlées"
             value={s.wallacePaumes}
@@ -42,14 +42,14 @@ export default function WallaceSection({ s, set }) {
             placeholder="1 paume = environ 1%"
           />
 
-          <div className="mt-3 rounded-2xl border border-dashed border-slate-300 bg-white p-3 text-sm text-slate-600">
+          <div className="mt-3 rounded-lg border border-dashed border-slate-300 bg-white p-3 text-sm text-slate-600">
             Méthode utile pour les petites brûlures : la paume de la victime
             représente environ 1% de la surface corporelle.
           </div>
         </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
             <h4 className="mb-3 font-bold text-slate-900">
               Face antérieure
             </h4>
@@ -119,7 +119,7 @@ export default function WallaceSection({ s, set }) {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
             <h4 className="mb-3 font-bold text-slate-900">
               Face postérieure
             </h4>
@@ -178,7 +178,7 @@ export default function WallaceSection({ s, set }) {
               />
             </div>
 
-            <div className="mt-3 rounded-2xl border border-dashed border-slate-300 bg-white p-3 text-sm text-slate-600">
+            <div className="mt-3 rounded-lg border border-dashed border-slate-300 bg-white p-3 text-sm text-slate-600">
               Retourner / inspecter la victime selon la situation et la
               sécurité, pour ne pas oublier les lésions postérieures.
             </div>

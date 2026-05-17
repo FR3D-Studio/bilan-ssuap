@@ -15,7 +15,6 @@ export const INITIAL_DATA = {
     adresse: "",
     nature: "",
     dangers: "",
-    securite: false,
     renforts: "",
     lieu: "",
   },

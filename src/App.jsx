@@ -1,7 +1,22 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
+
+import {
+  Activity,
+  FileDown,
+  HandHeart,
+  HeartPulse,
+  MapPinned,
+  Radio,
+  Route,
+} from "lucide-react";
+
+import logoMedifire from "./assets/logo-medifire.png";
+
 import { INITIAL_DATA, BLANK_SURVEILLANCE } from "./data/initialData";
+
 import Badge from "./components/ui/Badge";
+
 import ResumeTab from "./components/tabs/ResumeTab";
 import SamuTab from "./components/tabs/SamuTab";
 import DepartTab from "./components/tabs/DepartTab";
@@ -9,27 +24,142 @@ import PrimaireTab from "./components/tabs/PrimaireTab";
 import SecondaireTab from "./components/tabs/SecondaireTab";
 import GestesTab from "./components/tabs/GestesTab";
 import LiaisonSdisTab from "./components/tabs/LiaisonSdisTab";
+
 import {
-  getScore,
   calculateGlasgow,
   calculateMalinas,
   calculateWallace,
-  isFastPositive,
-  isRespiratoryDistressQuality,
   hasDetresseVitale,
+  isFastPositive,
 } from "./utils/scores";
 
-const txt = (value) => (value === null || value === undefined ? "" : String(value));
+const txt = (value) =>
+  value === null || value === undefined ? "" : String(value);
+
 const yesNo = (value) => (value ? "OUI" : "NON");
+
 const clone = (value) => JSON.parse(JSON.stringify(value));
+
+function formatDateTime(value) {
+  const raw = txt(value);
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+
+  if (!match) {
+    const dateOnly = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    if (dateOnly) {
+      const [, year, month, day] = dateOnly;
+
+      return `${day}/${month}/${year}`;
+    }
+
+    return raw;
+  }
+
+  const [, year, month, day, hour, minute] = match;
+
+  return `${day}/${month}/${year} ${hour}:${minute}`;
+}
+
+function getCurrentDateTimeValue() {
+  const now = new Date();
+  const timezoneOffset = now.getTimezoneOffset() * 60000;
+
+  return new Date(now.getTime() - timezoneOffset)
+    .toISOString()
+    .slice(0, 16);
+}
+
+function formatTime(value) {
+  const raw = txt(value);
+  const match = raw.match(/^(\d{2}):(\d{2})/);
+
+  if (!match) return raw;
+
+  return `${match[1]}:${match[2]}`;
+}
 
 function normalizeNovi(value) {
   const raw = txt(value).trim();
+
   if (raw.includes("Urgence absolue")) return "Urgence absolue";
   if (raw.includes("Urgence relative")) return "Urgence relative";
   if (raw.includes("Impliqué")) return "Impliqué / indemne";
   if (raw.includes("Décédé")) return "Décédé";
+
   return raw || "Non concerné";
+}
+
+function photoCountText(photos) {
+  const count = Array.isArray(photos) ? photos.length : 0;
+
+  return `${count} photo${count > 1 ? "s" : ""}`;
+}
+
+function hasUserData(value, initialValue) {
+  if (value === null || value === undefined) return false;
+
+  if (typeof value === "boolean") {
+    return value !== Boolean(initialValue);
+  }
+
+  if (typeof value === "number") {
+    return value !== initialValue;
+  }
+
+  if (typeof value === "string") {
+    const current = value.trim();
+    const initial = typeof initialValue === "string" ? initialValue.trim() : "";
+
+    return current.length > 0 && current !== initial;
+  }
+
+  if (Array.isArray(value)) {
+    const initialArray = Array.isArray(initialValue) ? initialValue : [];
+
+    if (value.length !== initialArray.length) {
+      return value.some((item) => hasUserData(item, undefined));
+    }
+
+    return value.some((item, index) => hasUserData(item, initialArray[index]));
+  }
+
+  if (typeof value === "object") {
+    const initialObject =
+      initialValue && typeof initialValue === "object" ? initialValue : {};
+
+    return Object.keys(value).some((key) =>
+      hasUserData(value[key], initialObject[key])
+    );
+  }
+
+  return false;
+}
+
+function getTabCompletion(data) {
+  const interventionWithoutAutoDate = {
+    ...data.intervention,
+    dateHeure: INITIAL_DATA.intervention.dateHeure,
+  };
+
+  return {
+    depart:
+      hasUserData(
+        interventionWithoutAutoDate,
+        INITIAL_DATA.intervention
+      ) ||
+      hasUserData(data.identite, INITIAL_DATA.identite) ||
+      hasUserData(data.circonstanciel, INITIAL_DATA.circonstanciel),
+    primaire: hasUserData(data.primaire, INITIAL_DATA.primaire),
+    secondaire: hasUserData(data.secondaire, INITIAL_DATA.secondaire),
+    gestes:
+      hasUserData(data.gestes, INITIAL_DATA.gestes) ||
+      hasUserData(data.surveillance, INITIAL_DATA.surveillance) ||
+      hasUserData(data.photos, INITIAL_DATA.photos),
+    samu: hasUserData(data.samu, INITIAL_DATA.samu),
+    liaison: hasUserData(data.aeronautique, INITIAL_DATA.aeronautique),
+    resume: false,
+  };
 }
 
 function buildResume(data) {
@@ -41,19 +171,29 @@ function buildResume(data) {
   const s = d.secondaire ?? {};
   const g = d.gestes ?? {};
   const samu = d.samu ?? {};
-  const surveillance = Array.isArray(d.surveillance) ? d.surveillance : [];
+  const surveillance = Array.isArray(d.surveillance)
+    ? d.surveillance
+    : [];
+
   const surveillanceText = surveillance.length
-    ? surveillance.map((x, index) => `${index + 1}. ${txt(x?.heure)} FR ${txt(x?.fr)} SpO₂ ${txt(x?.spo2)} FC ${txt(x?.fc)} TA ${txt(x?.ta)} Glasgow ${txt(x?.glasgow)} EVN ${txt(x?.evn)} ${txt(x?.notes)}`.trim()).join("\n")
+    ? surveillance
+        .map((x, index) =>
+          `${index + 1}. ${formatTime(x?.heure)} FR ${txt(x?.fr)} SpO2 ${txt(
+            x?.spo2
+          )} FC ${txt(x?.fc)} TA ${txt(x?.ta)} Glasgow ${txt(
+            x?.glasgow
+          )} EVN ${txt(x?.evn)} ${txt(x?.notes)}`.trim()
+        )
+        .join("\n")
     : "Aucune surveillance renseignée";
 
   return [
     "BILAN VICTIME",
     "",
     "INTERVENTION",
-    `Date/heure : ${txt(i.dateHeure)}`,
+    `Date/heure : ${formatDateTime(i.dateHeure)}`,
     `Lieu intervention : ${txt(i.lieu)}`,
     `Nature : ${txt(i.nature)}`,
-    `Sécurité réalisée : ${yesNo(i.securite)}`,
     `Dangers/contexte : ${txt(i.dangers)}`,
     `Renforts : ${txt(i.renforts)}`,
     "",
@@ -74,23 +214,47 @@ function buildResume(data) {
     "",
     "PRIMAIRE XABCDE",
     `X hémorragie : ${yesNo(p.xHemorragie)} ${txt(p.xAction)}`,
-    `A voies aériennes : ${txt(p.aVA)} / suspicion rachis : ${yesNo(p.aRachis)}`,
-    `B respiration : ${txt(p.bQualite)}, FR ${txt(p.bFR)}, SpO₂ ${txt(p.bSpO2)}, détresse ${yesNo(p.bDetresse)}`,
-    `C circulation : pouls ${txt(p.cPouls)}, FC ${txt(p.cFC)}, TA ${txt(p.cTA)}, TRC ${txt(p.cTRC)}, détresse ${yesNo(p.cDetresse)}`,
-    `D neurologique : Glasgow ${calculateGlasgow(d)}, conscience ${txt(p.dConscience)}, signes ${txt(p.dNeuro)}`,
+    `A voies aériennes : ${txt(p.aVA)} / suspicion rachis : ${yesNo(
+      p.aRachis
+    )}`,
+    `B respiration : ${txt(p.bQualite)}, FR ${txt(p.bFR)}, SpO2 ${txt(
+      p.bSpO2
+    )}, détresse ${yesNo(p.bDetresse)}`,
+    `C circulation : pouls ${txt(p.cPouls)}, FC ${txt(p.cFC)}, TA ${txt(
+      p.cTA
+    )}, TRC ${txt(p.cTRC)}, détresse ${yesNo(p.cDetresse)}`,
+    `D neurologique : Glasgow ${calculateGlasgow(d)}, conscience ${txt(
+      p.dConscience
+    )}, signes ${txt(p.dNeuro)}`,
     `E lésions : ${txt(p.eLesions)}`,
     "",
     "SECONDAIRE",
-    `PQRST : P ${txt(s.pqrstP)} / Q ${txt(s.pqrstQ)} / R ${txt(s.pqrstR)} / S ${txt(s.pqrstS)} / T ${txt(s.pqrstT)}`,
-    `MHTA : Maladie ${txt(s.maladie)} / Hospitalisation ${txt(s.hospitalisation)} / Traitement ${txt(s.traitement)} / Allergie ${txt(s.allergie)}`,
-    `Glycémie ${txt(s.glycemie)}, T° ${txt(s.temperature)}, EVN ${txt(s.evn)}, FAST ${isFastPositive(s) ? "positif" : "négatif/non retrouvé"}, Heure début symptômes ${txt(s.fastTime)}`,
+    `PQRST : P ${txt(s.pqrstP)} / Q ${txt(s.pqrstQ)} / R ${txt(
+      s.pqrstR
+    )} / S ${txt(s.pqrstS)} / T ${txt(s.pqrstT)}`,
+    `MHTA : Maladie ${txt(s.maladie)} / Hospitalisation ${txt(
+      s.hospitalisation
+    )} / Traitement ${txt(s.traitement)} / Allergie ${txt(s.allergie)}`,
+    `Glycémie ${txt(s.glycemie)}, T ${txt(s.temperature)}, EVN ${txt(
+      s.evn
+    )}, FAST ${isFastPositive(s) ? "positif" : "négatif/non retrouvé"}, Heure début symptômes ${formatTime(
+      s.fastTime
+    )}`,
     `Malinas ${calculateMalinas(s)}, Wallace ${calculateWallace(s)}%`,
     "",
     "GESTES",
-    `O₂ ${yesNo(g.oxygene)} débit ${txt(g.o2Debit)}, position ${txt(g.position)}, immobilisation ${yesNo(g.immobilisation)}, pansement ${yesNo(g.pansement)}, ASU ${txt(g.asu)}, autres ${txt(g.autres)}`,
+    `O2 ${yesNo(g.oxygene)} débit ${txt(g.o2Debit)}, position ${txt(
+      g.position
+    )}, immobilisation ${yesNo(g.immobilisation)}, pansement ${yesNo(
+      g.pansement
+    )}, ASU ${txt(g.asu)}, autres ${txt(g.autres)}`,
     "",
     "SAMU",
-    `Tri NOVI ${normalizeNovi(samu.couleur)}, heure transmission ${txt(samu.heureTransmission)}, décision ${txt(samu.decision)}, destination ${txt(samu.destination)}, vecteur ${txt(samu.vecteurTransport)}, consignes ${txt(samu.consignes)}`,
+    `Tri NOVI ${normalizeNovi(samu.couleur)}, heure transmission ${formatTime(
+      samu.heureTransmission
+    )}, décision ${txt(samu.decision)}, destination ${txt(
+      samu.destination
+    )}, vecteur ${txt(samu.vecteur)}, consignes ${txt(samu.consignes)}`,
     `Photos jointes localement : ${photoCountText(d.photos)}`,
     "",
     "SURVEILLANCE",
@@ -98,174 +262,189 @@ function buildResume(data) {
   ].join("\n");
 }
 
-function photoCountText(photos) {
-  const count = Array.isArray(photos) ? photos.length : 0;
-  return `${count} photo${count > 1 ? "s" : ""}`;
-}
-
-function runSelfTests() {
-  console.assert(buildResume({}).includes("BILAN VICTIME"), "Résumé minimal OK");
-  console.assert(getScore("4 - Spontanée") === 4, "Extraction score OK");
-  console.assert(calculateGlasgow({ primaire: { glasgowYeux: "4 - Spontanée", glasgowVerbal: "5 - Orientée", glasgowMoteur: "6 - Obéit aux ordres" } }) === 15, "Glasgow OK");
-  console.assert(calculateMalinas({ malinasParite: "2 - 3e et +", malinasTravail: "1 - 3 à 5h" }) === 3, "Malinas OK");
-  console.assert(calculateWallace({ wallaceTroncAvant: true, wallaceTroncArriere: true }) === 36, "Wallace OK");
-  console.assert(calculateWallace({ wallaceTeteAvant: true, wallaceTeteArriere: true }) === 9, "Wallace tête avant + arrière OK");
-  console.assert(calculateWallace({ wallaceMode: "Paume = 1%", wallacePaumes: "7" }) === 7, "Wallace paume OK");
-  console.assert(calculateWallace({ wallaceMode: "Enfant - règle adaptée", wallaceTeteAvant: true, wallaceTeteArriere: true }) === 17, "Wallace enfant tête OK");
-  console.assert(hasDetresseVitale({ primaire: { glasgowYeux: "2 - À la douleur", glasgowVerbal: "2 - Incompréhensible", glasgowMoteur: "3 - Flexion anormale" } }) === true, "Détresse Glasgow OK");
-  console.assert(isFastPositive({ fastFace: false, fastArm: true, fastSpeech: false }) === true, "FAST positif OK");
-  console.assert(normalizeNovi("Urgence absolue 🔴") === "Urgence absolue", "NOVI normalisé OK");
-  console.assert(photoCountText([{ id: 1 }, { id: 2 }]) === "2 photos", "Compteur photos OK");
-  console.assert(isRespiratoryDistressQuality("Absente") === true, "Respiration absente = détresse respiratoire");
-  console.assert(isRespiratoryDistressQuality("Gasp") === true, "Gasp = détresse respiratoire");
-  console.assert(isRespiratoryDistressQuality("Normale") === false, "Respiration normale non automatique");
-  console.assert("Non perçu" === "Non perçu", "Pouls non perçu = détresse circulatoire automatique");
-}
-runSelfTests();
-
-function TabButton({ id, active, onClick, completed, children }) {
-  const activeClasses = active === id
-    ? "bg-slate-950 text-white"
-    : completed
-      ? "bg-emerald-600 text-white hover:bg-emerald-700"
-      : "bg-white text-slate-700 hover:bg-slate-100";
-
-  return (
-    <button
-      type="button"
-      onClick={() => onClick(id)}
-      className={`rounded-2xl px-3 py-2 text-sm font-semibold transition ${activeClasses}`}
-    >
-      {children}
-      {completed ? <span className="ml-2">✓</span> : null}
-    </button>
-  );
-}
-
-function hasUserData(value, initialValue) {
-  if (value === null || value === undefined) return false;
-
-  if (typeof value === "boolean") {
-    return value !== Boolean(initialValue);
-  }
-
-  if (typeof value === "number") {
-    return value !== initialValue;
-  }
-
-  if (typeof value === "string") {
-    const current = value.trim();
-    const initial = typeof initialValue === "string" ? initialValue.trim() : "";
-    return current.length > 0 && current !== initial;
-  }
-
-  if (Array.isArray(value)) {
-    const initialArray = Array.isArray(initialValue) ? initialValue : [];
-
-    if (value.length !== initialArray.length) {
-      return value.some((item) => hasUserData(item, undefined));
-    }
-
-    return value.some((item, index) => hasUserData(item, initialArray[index]));
-  }
-
-  if (typeof value === "object") {
-    const initialObject = initialValue && typeof initialValue === "object" ? initialValue : {};
-    return Object.keys(value).some((key) => hasUserData(value[key], initialObject[key]));
-  }
-
-  return false;
-}
-
 const TAB_ORDER = [
-  { id: "depart", label: "Départ" },
-  { id: "primaire", label: "Primaire" },
-  { id: "secondaire", label: "Secondaire" },
-  { id: "gestes", label: "Gestes" },
-  { id: "samu", label: "SAMU" },
-  { id: "liaison", label: "Liaison SDIS" },
-  { id: "resume", label: "Résumé" },
+  {
+    id: "depart",
+    label: "Départ",
+    icon: MapPinned,
+    idleClass: "text-sky-700 hover:bg-sky-50",
+    iconClass: "bg-sky-100 text-sky-700",
+  },
+  {
+    id: "primaire",
+    label: "Primaire",
+    icon: HeartPulse,
+    idleClass: "text-red-700 hover:bg-red-50",
+    iconClass: "bg-red-100 text-red-700",
+  },
+  {
+    id: "secondaire",
+    label: "Secondaire",
+    icon: Activity,
+    idleClass: "text-emerald-700 hover:bg-emerald-50",
+    iconClass: "bg-emerald-100 text-emerald-700",
+  },
+  {
+    id: "gestes",
+    label: "ASU",
+    icon: HandHeart,
+    idleClass: "text-amber-700 hover:bg-amber-50",
+    iconClass: "bg-amber-100 text-amber-700",
+  },
+  {
+    id: "samu",
+    label: "SAMU",
+    icon: Radio,
+    idleClass: "text-indigo-700 hover:bg-indigo-50",
+    iconClass: "bg-indigo-100 text-indigo-700",
+  },
+  {
+    id: "liaison",
+    label: "Liaison SDIS",
+    icon: Route,
+    idleClass: "text-violet-700 hover:bg-violet-50",
+    iconClass: "bg-violet-100 text-violet-700",
+  },
+  {
+    id: "resume",
+    label: "Résumé",
+    icon: FileDown,
+    idleClass: "text-slate-700 hover:bg-slate-100",
+    iconClass: "bg-slate-100 text-slate-700",
+  },
 ];
-
-function getTabCompletion(data) {
-  return {
-    depart:
-      hasUserData(data.intervention, INITIAL_DATA.intervention) ||
-      hasUserData(data.identite, INITIAL_DATA.identite) ||
-      hasUserData(data.circonstanciel, INITIAL_DATA.circonstanciel),
-    primaire: hasUserData(data.primaire, INITIAL_DATA.primaire),
-    secondaire: hasUserData(data.secondaire, INITIAL_DATA.secondaire),
-    gestes:
-      hasUserData(data.gestes, INITIAL_DATA.gestes) ||
-      hasUserData(data.surveillance, INITIAL_DATA.surveillance) ||
-      hasUserData(data.photos, INITIAL_DATA.photos),
-    samu: hasUserData(data.samu, INITIAL_DATA.samu),
-    liaison: hasUserData(data.aeronautique, INITIAL_DATA.aeronautique),
-    resume: false,
-  };
-}
-
-function BottomTabNavigation({ active, setActive }) {
-  const currentIndex = TAB_ORDER.findIndex((tab) => tab.id === active);
-  const previousTab = currentIndex > 0 ? TAB_ORDER[currentIndex - 1] : null;
-  const nextTab = currentIndex >= 0 && currentIndex < TAB_ORDER.length - 1 ? TAB_ORDER[currentIndex + 1] : null;
-
-  return (
-    <div className="sticky bottom-3 z-20 mt-4 flex items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur">
-      <button
-        type="button"
-        disabled={!previousTab}
-        onClick={() => previousTab && setActive(previousTab.id)}
-        className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-800 shadow-sm disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        ← {previousTab ? previousTab.label : "Début"}
-      </button>
-
-      <div className="text-center text-xs font-bold text-slate-500">
-        Navigation rapide
-      </div>
-
-      <button
-        type="button"
-        disabled={!nextTab}
-        onClick={() => nextTab && setActive(nextTab.id)}
-        className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        {nextTab ? nextTab.label : "Fin"} →
-      </button>
-    </div>
-  );
-}
 
 function AppHeader({ detresseVitale }) {
   return (
-    <motion.header initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl bg-slate-950 p-5 text-white shadow-lg">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-black md:text-3xl">Bilan SSUAP mobile</h1>
-          <p className="text-sm text-slate-300">Support de saisie opérationnelle : circonstanciel, primaire XABCDE, secondaire, surveillance, transmission.</p>
+    <motion.header
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#002B67] via-[#003C8F] to-[#071D49] p-4 text-white shadow-2xl shadow-blue-950/25 sm:p-5"
+    >
+      <div className="grid items-center gap-4 md:grid-cols-[96px_1fr_96px]">
+        <div className="flex justify-start">
+          <img
+            src={logoMedifire}
+            alt="Logo MédiFIRE"
+            className="h-20 w-20 shrink-0 rounded-2xl bg-white object-contain p-1 shadow-lg ring-1 ring-white/30 sm:h-24 sm:w-24"
+          />
         </div>
-        <Badge danger={detresseVitale}>{detresseVitale ? "Détresse vitale potentielle" : "Pas de détresse vitale cochée"}</Badge>
+
+        <div className="min-w-0 text-center">
+          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-blue-100 sm:text-xs">
+            RFFS
+          </div>
+
+          <h1 className="mt-1 text-4xl font-black leading-none tracking-tight sm:text-5xl">
+            <span className="text-white">Médi</span>
+            <span className="text-red-500">FIRE</span>
+          </h1>
+
+          <p className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-blue-100 sm:text-sm">
+            SSUAP opérationnel
+          </p>
+        </div>
+
+        <div />
       </div>
-      <p className="mt-3 rounded-2xl bg-white/10 p-3 text-xs text-slate-200">Outil d’aide à la structuration du bilan. La décision opérationnelle et médicale relève des procédures en vigueur, du CA et de la régulation SAMU.</p>
+
+      <p className="mx-auto mt-4 max-w-none rounded-2xl border border-white/15 bg-white/10 p-3 text-center text-[11px] font-medium leading-relaxed text-blue-50 backdrop-blur sm:whitespace-nowrap sm:text-xs">
+        Outil d’aide à la structuration du bilan. La décision opérationnelle
+        et médicale relève des procédures en vigueur, du CA et de la
+        régulation SAMU.
+      </p>
+
+      <div className="mt-3 flex justify-center">
+        <Badge color={detresseVitale ? "red" : "green"} danger={detresseVitale}>
+          {detresseVitale
+            ? "Détresse vitale potentielle"
+            : "Aucune détresse vitale"}
+        </Badge>
+      </div>
     </motion.header>
   );
 }
 
+function BottomTabNavigation({ active, setActive }) {
+  const currentIndex = TAB_ORDER.findIndex((tab) => tab.id === active);
+
+  const previousTab =
+    currentIndex > 0 ? TAB_ORDER[currentIndex - 1] : null;
+
+  const nextTab =
+    currentIndex >= 0 && currentIndex < TAB_ORDER.length - 1
+      ? TAB_ORDER[currentIndex + 1]
+      : null;
+
+  const currentTab = TAB_ORDER[currentIndex];
+
+  return (
+    <div className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-30 rounded-2xl border border-blue-950/10 bg-[#002B67]/95 p-2 shadow-2xl shadow-blue-950/30 backdrop-blur lg:sticky lg:inset-auto lg:bottom-3 lg:mt-4 lg:p-3">
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          disabled={!previousTab}
+          onClick={() => previousTab && setActive(previousTab.id)}
+          className="min-h-11 flex-1 rounded-xl bg-white/10 px-3 py-2.5 text-sm font-black text-white transition hover:bg-white/20 disabled:opacity-30 sm:flex-none sm:px-4"
+        >
+          <span className="sm:hidden">← {previousTab ? "Préc." : "Début"}</span>
+          <span className="hidden sm:inline">
+            ← {previousTab ? previousTab.label : "Début"}
+          </span>
+        </button>
+
+        <div className="hidden text-center text-xs font-black uppercase tracking-[0.18em] text-blue-100 sm:block">
+          {currentTab?.label || "Navigation"}
+        </div>
+
+        <button
+          type="button"
+          disabled={!nextTab}
+          onClick={() => nextTab && setActive(nextTab.id)}
+          className="min-h-11 flex-1 rounded-xl bg-white px-3 py-2.5 text-sm font-black text-[#003C8F] shadow-sm transition hover:bg-blue-50 disabled:opacity-30 sm:flex-none sm:px-4"
+        >
+          <span className="sm:hidden">{nextTab ? "Suiv." : "Fin"} →</span>
+          <span className="hidden sm:inline">
+            {nextTab ? nextTab.label : "Fin"} →
+          </span>
+        </button>
+      </div>
+
+      <div className="mt-1 text-center text-[10px] font-semibold text-blue-100/80">
+        © 2026 FR3D-Studio
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
-  const [data, setData] = useState(() => clone(INITIAL_DATA));
+  const [data, setData] = useState(() => ({
+    ...clone(INITIAL_DATA),
+    intervention: {
+      ...clone(INITIAL_DATA.intervention),
+      dateHeure: getCurrentDateTimeValue(),
+    },
+  }));
   const [active, setActive] = useState("depart");
 
   const set = (path, value) => {
     setData((prev) => {
       const next = clone(prev ?? INITIAL_DATA);
+
       let current = next;
+
       for (let i = 0; i < path.length - 1; i += 1) {
         const key = path[i];
-        if (!current[key] || typeof current[key] !== "object") current[key] = {};
+
+        if (!current[key] || typeof current[key] !== "object") {
+          current[key] = {};
+        }
+
         current = current[key];
       }
+
       current[path[path.length - 1]] = value;
+
       return next;
     });
   };
@@ -273,9 +452,17 @@ export default function App() {
   const updateSurveillance = (index, key, value) => {
     setData((prev) => {
       const next = clone(prev ?? INITIAL_DATA);
-      if (!Array.isArray(next.surveillance)) next.surveillance = [];
-      if (!next.surveillance[index]) next.surveillance[index] = { ...BLANK_SURVEILLANCE };
+
+      if (!Array.isArray(next.surveillance)) {
+        next.surveillance = [];
+      }
+
+      if (!next.surveillance[index]) {
+        next.surveillance[index] = { ...BLANK_SURVEILLANCE };
+      }
+
       next.surveillance[index][key] = value;
+
       return next;
     });
   };
@@ -283,8 +470,13 @@ export default function App() {
   const addSurveillance = () => {
     setData((prev) => {
       const next = clone(prev ?? INITIAL_DATA);
-      if (!Array.isArray(next.surveillance)) next.surveillance = [];
+
+      if (!Array.isArray(next.surveillance)) {
+        next.surveillance = [];
+      }
+
       next.surveillance.push({ ...BLANK_SURVEILLANCE });
+
       return next;
     });
   };
@@ -292,19 +484,30 @@ export default function App() {
   const addPhotos = (files) => {
     files.forEach((file) => {
       if (!file.type.startsWith("image/")) return;
+
       const reader = new FileReader();
+
       reader.onload = () => {
         setData((prev) => {
           const next = clone(prev ?? INITIAL_DATA);
-          if (!Array.isArray(next.photos)) next.photos = [];
+
+          if (!Array.isArray(next.photos)) {
+            next.photos = [];
+          }
+
           next.photos.push({
-            id: `${Date.now()}-${Math.random()}`,
+            id:
+              typeof crypto !== "undefined" && crypto.randomUUID
+                ? crypto.randomUUID()
+                : `${Date.now()}-${Math.random()}`,
             name: file.name,
             dataUrl: String(reader.result || ""),
           });
+
           return next;
         });
       };
+
       reader.readAsDataURL(file);
     });
   };
@@ -312,13 +515,29 @@ export default function App() {
   const removePhoto = (id) => {
     setData((prev) => {
       const next = clone(prev ?? INITIAL_DATA);
-      next.photos = Array.isArray(next.photos) ? next.photos.filter((photo) => photo.id !== id) : [];
+
+      next.photos = Array.isArray(next.photos)
+        ? next.photos.filter((photo) => photo.id !== id)
+        : [];
+
       return next;
     });
   };
 
-  const reset = () => setData(clone(INITIAL_DATA));
-  const detresseVitale = useMemo(() => hasDetresseVitale(data), [data]);
+  const reset = () =>
+    setData({
+      ...clone(INITIAL_DATA),
+      intervention: {
+        ...clone(INITIAL_DATA.intervention),
+        dateHeure: getCurrentDateTimeValue(),
+      },
+    });
+
+  const detresseVitale = useMemo(
+    () => hasDetresseVitale(data),
+    [data]
+  );
+
   const resume = useMemo(() => buildResume(data), [data]);
   const tabCompletion = useMemo(() => getTabCompletion(data), [data]);
 
@@ -341,30 +560,104 @@ export default function App() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-100 p-3 md:p-6">
-      <div className="mx-auto max-w-6xl space-y-4">
+    <main className="min-h-screen bg-gradient-to-b from-[#F6FAFF] via-[#EAF1FB] to-[#F8FAFC] p-3 pb-24 md:p-6 lg:pb-6">
+      <div className="mx-auto max-w-7xl space-y-4">
         <AppHeader detresseVitale={detresseVitale} />
-        <nav className="grid grid-cols-2 gap-2 rounded-3xl bg-white p-2 shadow-sm md:grid-cols-4 lg:grid-cols-7">
-          {TAB_ORDER.map((tab) => (
-            <TabButton
-              key={tab.id}
-              id={tab.id}
-              active={active}
-              onClick={setActive}
-              completed={tabCompletion[tab.id]}
-            >
-              {tab.label}
-            </TabButton>
-          ))}
+
+        <nav className="sticky top-2 z-20 grid auto-cols-max grid-flow-col gap-2 overflow-x-auto rounded-2xl border border-white/70 bg-white/85 p-2 shadow-xl shadow-blue-950/5 backdrop-blur lg:grid-flow-col lg:grid-cols-7">
+          {TAB_ORDER.map((tab) => {
+            const Icon = tab.icon;
+            const completed = tabCompletion[tab.id];
+
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActive(tab.id)}
+                className={`
+                  flex min-h-14 shrink-0 items-center justify-center gap-3 rounded-xl px-4 py-3 text-left text-base font-black transition lg:w-full
+                  ${
+                    active === tab.id
+                      ? "bg-[#003C8F] text-white shadow-lg shadow-blue-900/25"
+                      : completed
+                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-900/20"
+                        : `bg-transparent ${tab.idleClass}`
+                  }
+                `}
+              >
+                <span
+                  className={`
+                    flex h-10 w-10 shrink-0 items-center justify-center rounded-xl
+                    ${
+                      active === tab.id || completed
+                        ? "bg-white/20"
+                        : tab.iconClass
+                    }
+                  `}
+                >
+                  <Icon className="h-5 w-5" strokeWidth={2.35} />
+                </span>
+
+                <span className="whitespace-nowrap leading-none">
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
         </nav>
-        {active === "depart" ? <DepartTab data={data} set={set} /> : null}
-        {active === "primaire" ? <PrimaireTab data={data} set={set} detresseVitale={detresseVitale} /> : null}
-        {active === "secondaire" ? <SecondaireTab data={data} set={set} /> : null}
-        {active === "gestes" ? <GestesTab data={data} set={set} updateSurveillance={updateSurveillance} addSurveillance={addSurveillance} onAddPhotos={addPhotos} onRemovePhoto={removePhoto} /> : null}
-        {active === "samu" ? <SamuTab data={data} set={set} /> : null}
-        {active === "liaison" ? <LiaisonSdisTab data={data} set={set} /> : null}
-        {active === "resume" ? <ResumeTab resume={resume} copyResume={copyResume} sendMail={sendMail} printPdf={printPdf} reset={reset} /> : null}
-        <BottomTabNavigation active={active} setActive={setActive} />
+
+        <section className="min-w-0 space-y-4">
+            {active === "depart" ? (
+              <DepartTab data={data} set={set} />
+            ) : null}
+
+            {active === "primaire" ? (
+              <PrimaireTab
+                data={data}
+                set={set}
+                detresseVitale={detresseVitale}
+              />
+            ) : null}
+
+            {active === "secondaire" ? (
+              <SecondaireTab data={data} set={set} />
+            ) : null}
+
+            {active === "gestes" ? (
+              <GestesTab
+                data={data}
+                set={set}
+                updateSurveillance={updateSurveillance}
+                addSurveillance={addSurveillance}
+                onAddPhotos={addPhotos}
+                onRemovePhoto={removePhoto}
+              />
+            ) : null}
+
+            {active === "samu" ? (
+              <SamuTab data={data} set={set} />
+            ) : null}
+
+            {active === "liaison" ? (
+              <LiaisonSdisTab data={data} set={set} />
+            ) : null}
+
+            {active === "resume" ? (
+              <ResumeTab
+                resume={resume}
+                copyResume={copyResume}
+                sendMail={sendMail}
+                printPdf={printPdf}
+                reset={reset}
+              />
+            ) : null}
+
+            <BottomTabNavigation
+              active={active}
+              setActive={setActive}
+            />
+        </section>
+
       </div>
     </main>
   );

@@ -1,6 +1,6 @@
 import {
+  Activity,
   AlertTriangle,
-  Stethoscope,
 } from "lucide-react";
 
 import CardBlock from "../ui/CardBlock";
@@ -14,7 +14,6 @@ import WallaceSection from "../secondary/WallaceSection";
 
 import {
   calculateMalinas,
-  calculateWallace,
   isFastPositive,
 } from "../../utils/scores";
 
@@ -22,19 +21,18 @@ export default function SecondaireTab({ data, set }) {
   const s = data.secondaire;
 
   const malinas = calculateMalinas(s);
-  const wallace = calculateWallace(s);
   const fast = isFastPositive(s);
 
   return (
     <CardBlock
       title="Bilan secondaire : PQRST + MHTA + paramètres"
-      icon={Stethoscope}
+      icon={Activity}
       tone="green"
     >
       {/* PQRST + MHTA */}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-3xl border border-emerald-100 bg-white p-4 shadow-sm">
+        <div className="rounded-lg border border-emerald-100 bg-white p-4 shadow-sm">
           <h3 className="mb-3 text-base font-bold text-slate-900">
             PQRST
           </h3>
@@ -82,7 +80,7 @@ export default function SecondaireTab({ data, set }) {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-emerald-100 bg-white p-4 shadow-sm">
+        <div className="rounded-lg border border-emerald-100 bg-white p-4 shadow-sm">
           <h3 className="mb-3 text-base font-bold text-slate-900">
             MHTA
           </h3>
@@ -125,7 +123,7 @@ export default function SecondaireTab({ data, set }) {
 
       {/* FAST */}
 
-      <div className="rounded-3xl border border-emerald-100 bg-white p-4 shadow-sm">
+      <div className="rounded-lg border border-emerald-100 bg-white p-4 shadow-sm">
         <h3 className="mb-3 text-base font-bold text-slate-900">
           FAST AVC
         </h3>
@@ -157,16 +155,16 @@ export default function SecondaireTab({ data, set }) {
 
           <Field
             label="Time / début symptômes"
+            type="time"
             value={s.fastTime}
             onChange={(v) =>
               set(["secondaire", "fastTime"], v)
             }
-            placeholder="Ex : 14h32"
           />
         </div>
 
         <div
-          className={`mt-3 rounded-2xl p-3 font-semibold ${
+          className={`mt-3 rounded-lg p-3 font-semibold ${
             fast
               ? "bg-red-600 text-white"
               : "bg-slate-100 text-slate-900"
@@ -231,7 +229,7 @@ export default function SecondaireTab({ data, set }) {
         </div>
 
         {malinas >= 5 ? (
-          <div className="mt-3 rounded-2xl bg-red-100 p-3 text-center font-bold text-red-800">
+          <div className="mt-3 rounded-lg bg-red-100 p-3 text-center font-bold text-red-800">
             <AlertTriangle className="mr-2 inline h-5 w-5" />
             Accouchement imminent : préparer prise en charge sur
             place et prévenir rapidement le SAMU.
@@ -245,7 +243,7 @@ export default function SecondaireTab({ data, set }) {
 
       {/* PARAMÈTRES */}
 
-      <div className="rounded-3xl border border-emerald-100 bg-white p-4 shadow-sm">
+      <div className="rounded-lg border border-emerald-100 bg-white p-4 shadow-sm">
         <h3 className="mb-3 text-base font-bold text-slate-900">
           Paramètres / examens complémentaires
         </h3>

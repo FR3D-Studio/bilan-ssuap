@@ -1,18 +1,21 @@
 export default function Badge({
   children,
   color = "slate",
+  danger = false,
 }) {
   const colors = {
-    red: "bg-red-600 text-white",
-    green: "bg-green-600 text-white",
-    amber: "bg-amber-500 text-black",
-    blue: "bg-blue-600 text-white",
-    slate: "bg-slate-700 text-white",
+    red: "bg-red-600 text-white shadow-red-950/20",
+    green: "bg-emerald-600 text-white shadow-emerald-950/20",
+    amber: "bg-amber-400 text-slate-950 shadow-amber-950/15",
+    blue: "bg-[#003C8F] text-white shadow-blue-950/20",
+    slate: "bg-slate-800 text-white shadow-slate-950/20",
   };
 
   return (
     <span
-      className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${colors[color]}`}
+      className={`inline-flex items-center justify-center text-center rounded-full px-3 py-2 text-xs font-black leading-tight shadow-lg ${
+        danger ? colors.red : colors[color]
+      }`}
     >
       {children}
     </span>

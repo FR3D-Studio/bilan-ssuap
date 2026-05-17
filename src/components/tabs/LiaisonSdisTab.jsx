@@ -1,10 +1,12 @@
-import { FileText, Plane, Mail, Printer, Copy } from "lucide-react";
+import { useRef } from "react";
+import { Copy, FileOutput, Mail, Plane, Printer } from "lucide-react";
 
 import CardBlock from "../ui/CardBlock";
 import Field from "../ui/Field";
 import Button from "../ui/Button";
 
 import logoMedifire from "../../assets/logo-medifire.png";
+import { downloadElementAsPdf } from "../../utils/pdfExport";
 
 const txt = (value) =>
   value === null || value === undefined ? "" : String(value);
@@ -105,7 +107,7 @@ function PrintTextBlock({ value }) {
   );
 }
 
-function PrintableLiaison({ data }) {
+function PrintableLiaison({ data, pageRef }) {
   const id = data.identite ?? {};
   const c = data.circonstanciel ?? {};
   const s = data.secondaire ?? {};
@@ -116,7 +118,7 @@ function PrintableLiaison({ data }) {
 
   return (
     <div className="print-only">
-      <div className="print-page">
+      <div ref={pageRef} className="print-page">
         <header className="mb-3 border-b-2 border-black pb-3">
           <div className="grid grid-cols-[90px_1fr_90px] items-center">
             <div className="flex justify-start">
@@ -267,6 +269,7 @@ function PrintableLiaison({ data }) {
 }
 
 export default function LiaisonSdisTab({ data, set }) {
+  const pageRef = useRef(null);
   const liaison = buildLiaison(data);
 
   const copyLiaison = async () => {
@@ -283,8 +286,15 @@ export default function LiaisonSdisTab({ data, set }) {
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
-  const printLiaison = () => {
-    window.print();
+  const printLiaison = async () => {
+    try {
+      await downloadElementAsPdf(
+        pageRef.current,
+        "fiche-liaison-rffs-sdis.pdf"
+      );
+    } catch {
+      window.print();
+    }
   };
 
   return (
@@ -387,7 +397,7 @@ export default function LiaisonSdisTab({ data, set }) {
           </div>
         </CardBlock>
 
-        <CardBlock title="Fiche de liaison RFFS → SDIS" icon={FileText} tone="amber">
+        <CardBlock title="Fiche de liaison RFFS → SDIS" icon={FileOutput} tone="amber">
           <div className="mb-4 flex flex-wrap gap-2">
             <Button onClick={copyLiaison}>
               <Copy className="mr-2 h-4 w-4" />
@@ -401,19 +411,19 @@ export default function LiaisonSdisTab({ data, set }) {
 
             <Button onClick={printLiaison}>
               <Printer className="mr-2 h-4 w-4" />
-              Imprimer / PDF
+              Télécharger PDF
             </Button>
           </div>
 
           <textarea
             readOnly
             value={liaison}
-            className="min-h-[700px] w-full rounded-3xl border border-slate-200 bg-white p-4 font-mono text-sm shadow-sm outline-none"
+            className="min-h-[60vh] w-full rounded-lg border border-slate-300 bg-white p-4 font-mono text-sm outline-none"
           />
         </CardBlock>
       </div>
 
-      <PrintableLiaison data={data} />
+      <PrintableLiaison data={data} pageRef={pageRef} />
     </>
   );
 }

@@ -1,11 +1,33 @@
-import { ClipboardList, ShieldCheck, FileText } from "lucide-react";
+import { MapPinned, ScrollText, UserRound } from "lucide-react";
 
 import CardBlock from "../ui/CardBlock";
 import Field from "../ui/Field";
 import SelectField from "../ui/SelectField";
-import Check from "../ui/Check";
 
 import { OPTIONS } from "../../data/options";
+
+function splitDateTime(value) {
+  const [date = "", time = ""] = String(value || "").split("T");
+
+  return {
+    date,
+    time: time.slice(0, 5),
+  };
+}
+
+function mergeDateTime(currentValue, key, nextValue) {
+  const current = splitDateTime(currentValue);
+  const next = {
+    ...current,
+    [key]: nextValue,
+  };
+
+  if (!next.date && !next.time) return "";
+  if (!next.date) return next.time;
+  if (!next.time) return next.date;
+
+  return `${next.date}T${next.time}`;
+}
 
 function TextAreaField({
   label,
@@ -22,7 +44,7 @@ function TextAreaField({
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${
+        className={`w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${
           small ? "min-h-24" : "min-h-28"
         }`}
       />
@@ -31,14 +53,34 @@ function TextAreaField({
 }
 
 export default function DepartTab({ data, set }) {
+  const interventionDateTime = splitDateTime(data.intervention.dateHeure);
+
   return (
     <div className="space-y-4">
-      <CardBlock title="1. Intervention" icon={ShieldCheck} tone="blue">
+      <CardBlock title="1. Intervention" icon={MapPinned} tone="blue">
         <div className="grid gap-3 md:grid-cols-2">
           <Field
-            label="Date / heure"
-            value={data.intervention.dateHeure}
-            onChange={(v) => set(["intervention", "dateHeure"], v)}
+            label="Date"
+            type="date"
+            value={interventionDateTime.date}
+            onChange={(v) =>
+              set(
+                ["intervention", "dateHeure"],
+                mergeDateTime(data.intervention.dateHeure, "date", v)
+              )
+            }
+          />
+
+          <Field
+            label="Heure"
+            type="time"
+            value={interventionDateTime.time}
+            onChange={(v) =>
+              set(
+                ["intervention", "dateHeure"],
+                mergeDateTime(data.intervention.dateHeure, "time", v)
+              )
+            }
           />
 
           <Field
@@ -72,7 +114,7 @@ export default function DepartTab({ data, set }) {
         </div>
       </CardBlock>
 
-      <CardBlock title="2. Identification" icon={ClipboardList} tone="slate">
+      <CardBlock title="2. Identification" icon={UserRound} tone="slate">
         <div className="grid gap-3 md:grid-cols-2">
           <Field
             label="Nom"
@@ -137,7 +179,7 @@ export default function DepartTab({ data, set }) {
         </div>
       </CardBlock>
 
-      <CardBlock title="3. Circonstanciel" icon={FileText} tone="amber">
+      <CardBlock title="3. Circonstanciel" icon={ScrollText} tone="amber">
         <div className="grid gap-3 md:grid-cols-2">
           <TextAreaField
             label="Circonstances"
@@ -153,11 +195,6 @@ export default function DepartTab({ data, set }) {
             placeholder="Gestes effectués avant arrivée, consignes données, premiers secours..."
           />
 
-          <Check
-            label="Sécurité réalisée"
-            checked={data.intervention.securite}
-            onChange={(v) => set(["intervention", "securite"], v)}
-          />
         </div>
       </CardBlock>
     </div>

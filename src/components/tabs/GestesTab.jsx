@@ -1,4 +1,4 @@
-import { ClipboardList, ShieldCheck, TimerReset } from "lucide-react";
+import { HandHeart, Images, TimerReset } from "lucide-react";
 
 import CardBlock from "../ui/CardBlock";
 import Field from "../ui/Field";
@@ -17,7 +17,7 @@ function TextAreaField({ label, value, onChange, placeholder = "" }) {
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+        className="min-h-24 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
       />
     </label>
   );
@@ -30,7 +30,7 @@ function photoCountText(photos) {
 
 function PhotoInput({ onAddPhotos }) {
   return (
-    <label className="inline-flex cursor-pointer items-center justify-center rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800">
+    <label className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800">
       Prendre / ajouter photo
       <input
         type="file"
@@ -49,9 +49,9 @@ function PhotoInput({ onAddPhotos }) {
 
 function PhotosBlock({ photos, onAddPhotos, onRemovePhoto }) {
   return (
-    <CardBlock title="Photos intervention" icon={ClipboardList} tone="slate">
+    <CardBlock title="Photos intervention" icon={Images} tone="slate">
       <div className="space-y-3">
-        <div className="rounded-2xl bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+        <div className="rounded-lg bg-amber-50 p-3 text-sm font-semibold text-amber-900">
           Photos conservées localement dans le bilan en cours. Attention aux
           données personnelles et médicales.
         </div>
@@ -68,12 +68,12 @@ function PhotosBlock({ photos, onAddPhotos, onRemovePhoto }) {
             {photos.map((photo) => (
               <div
                 key={photo.id}
-                className="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm"
+                className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
               >
                 <img
                   src={photo.dataUrl}
                   alt={photo.name || "Photo intervention"}
-                  className="h-48 w-full rounded-2xl object-cover"
+                  className="h-48 w-full rounded-lg object-cover"
                 />
 
                 <div className="mt-2 flex items-center justify-between gap-2">
@@ -113,7 +113,7 @@ export default function GestesTab({
     <div className="space-y-4">
       <CardBlock
         title="Gestes réalisés / conditionnement"
-        icon={ShieldCheck}
+        icon={HandHeart}
         tone="amber"
       >
         <div className="grid gap-3 md:grid-cols-2">
@@ -168,10 +168,11 @@ export default function GestesTab({
           {surveillance.map((s, i) => (
             <div
               key={`surveillance-${i}`}
-              className="grid gap-2 rounded-3xl border border-slate-200 bg-white p-3 md:grid-cols-8"
+              className="grid gap-2 rounded-lg border border-slate-200 bg-white p-3 md:grid-cols-8"
             >
               <Field
                 label="Heure"
+                type="time"
                 value={s?.heure}
                 onChange={(v) => updateSurveillance(i, "heure", v)}
               />

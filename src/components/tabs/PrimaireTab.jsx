@@ -14,11 +14,11 @@ import {
 
 function ScoreCard({ title, value, danger, children }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 className="mb-3 text-base font-bold text-slate-900">{title}</h3>
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <h3 className="mb-3 text-base font-black text-slate-950">{title}</h3>
       {children}
       <div
-        className={`mt-3 rounded-2xl p-3 text-center text-2xl font-black text-white ${
+        className={`mt-3 rounded-lg p-3 text-center text-xl font-black text-white sm:text-2xl ${
           danger ? "bg-red-600" : "bg-slate-950"
         }`}
       >
@@ -171,7 +171,7 @@ export default function PrimaireTab({ data, set, detresseVitale }) {
             </div>
 
             {glasgow >= 3 && glasgow <= 7 ? (
-              <div className="mt-3 rounded-2xl bg-red-100 p-3 text-center font-bold text-red-800">
+              <div className="mt-3 rounded-lg bg-red-100 p-3 text-center font-bold text-red-800">
                 <AlertTriangle className="mr-2 inline h-5 w-5" />
                 Glasgow 3 à 7 : avis médical urgent
               </div>
@@ -195,7 +195,7 @@ export default function PrimaireTab({ data, set, detresseVitale }) {
             onChange={(e) =>
               set(["primaire", "dNeuro"], e.target.value)
             }
-            className="min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            className="min-h-24 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           />
         </label>
 
@@ -208,13 +208,13 @@ export default function PrimaireTab({ data, set, detresseVitale }) {
             onChange={(e) =>
               set(["primaire", "eLesions"], e.target.value)
             }
-            className="min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            className="min-h-24 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           />
         </label>
       </div>
 
       {detresseVitale ? (
-        <div className="mt-4 rounded-2xl bg-red-600 p-3 font-semibold text-white">
+        <div className="mt-4 rounded-lg bg-red-600 p-3 font-semibold text-white">
           <AlertTriangle className="mr-2 inline h-5 w-5" />
           Transmission urgente SAMU / bilan rouge à envisager selon procédure.
         </div>
