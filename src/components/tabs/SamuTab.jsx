@@ -6,6 +6,7 @@ import Field from "../ui/Field";
 import SelectField from "../ui/SelectField";
 import Modal from "../ui/Modal";
 import Button from "../ui/Button";
+import Check from "../ui/Check";
 
 import { OPTIONS } from "../../data/options";
 import { downloadElementAsPdf } from "../../utils/pdfExport";
@@ -55,73 +56,205 @@ function NoviBadge({ value }) {
   );
 }
 
-function PrintRow({ label, value }) {
+function formatDate(value) {
+  const raw = txt(value);
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+  if (!match) return raw;
+
+  return `${match[3]}/${match[2]}/${match[1]}`;
+}
+
+function formatDateForInput(value) {
+  return txt(value).slice(0, 10);
+}
+
+function ReadOnlyField({ label, value }) {
   return (
-    <div className="grid grid-cols-3 border-b border-slate-300">
-      <div className="bg-slate-100 px-2 py-1 text-[11px] font-bold">
+    <div className="block space-y-2">
+      <span className="pl-0.5 text-sm font-bold leading-tight text-slate-700">
         {label}
-      </div>
-      <div className="col-span-2 px-2 py-1 text-[11px]">
+      </span>
+      <div className="min-h-12 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-medium text-slate-900">
         {txt(value) || "-"}
       </div>
     </div>
   );
 }
 
+function SignatureBox({ value }) {
+  if (txt(value).startsWith("data:image/")) {
+    return (
+      <img
+        src={value}
+        alt=""
+        className="mx-auto h-14 max-w-full object-contain"
+      />
+    );
+  }
+
+  return txt(value);
+}
+
+function SignaturePadModal({ open, title, value, onSave, onClose }) {
+  const canvasRef = useRef(null);
+  const drawingRef = useRef(false);
+
+  const getPoint = (event) => {
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const point = event.touches?.[0] ?? event;
+
+    return {
+      x: ((point.clientX - rect.left) / rect.width) * canvas.width,
+      y: ((point.clientY - rect.top) / rect.height) * canvas.height,
+    };
+  };
+
+  const setupCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const context = canvas.getContext("2d");
+    context.lineWidth = 3;
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.strokeStyle = "#0f172a";
+
+    if (value?.startsWith("data:image/")) {
+      const image = new Image();
+      image.onload = () => {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      };
+      image.src = value;
+    }
+  };
+
+  const startDrawing = (event) => {
+    event.preventDefault();
+    setupCanvas();
+    drawingRef.current = true;
+    const context = canvasRef.current.getContext("2d");
+    const point = getPoint(event);
+    context.beginPath();
+    context.moveTo(point.x, point.y);
+  };
+
+  const draw = (event) => {
+    if (!drawingRef.current) return;
+    event.preventDefault();
+    const context = canvasRef.current.getContext("2d");
+    const point = getPoint(event);
+    context.lineTo(point.x, point.y);
+    context.stroke();
+  };
+
+  const stopDrawing = () => {
+    drawingRef.current = false;
+  };
+
+  const clear = () => {
+    const canvas = canvasRef.current;
+    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  const save = () => {
+    onSave(canvasRef.current.toDataURL("image/png"));
+    onClose();
+  };
+
+  return (
+    <Modal open={open} title={title} onClose={onClose}>
+      <div className="space-y-4">
+        <canvas
+          ref={(canvas) => {
+            canvasRef.current = canvas;
+            setupCanvas();
+          }}
+          width={900}
+          height={320}
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+          className="h-64 w-full touch-none rounded-xl border-2 border-slate-300 bg-white"
+        />
+
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={clear}>
+            Effacer
+          </Button>
+          <Button onClick={save}>Valider la signature</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 function PrintableRefusEvacuation({ data, pageRef }) {
   const samu = data.samu ?? {};
+  const identite = data.identite ?? {};
+  const aeronautique = data.aeronautique ?? {};
+  const intervention = data.intervention ?? {};
+  const victimeNomComplet = [identite.prenom, identite.nom]
+    .map(txt)
+    .filter(Boolean)
+    .join(" ");
+  const numeroVol = samu.refusNumeroVol || aeronautique.numeroVol;
+  const refusDate =
+    samu.refusDate || formatDateForInput(intervention.dateHeure);
 
   return (
     <div className="print-only">
-      <div ref={pageRef} className="print-page">
-        <header className="mb-4 border-b-2 border-black pb-3 text-center">
-          <h1 className="text-3xl font-black uppercase tracking-tight">
-            Refus d'évacuation
-          </h1>
-          <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-slate-600">
-            Fiche séparée - support opérationnel provisoire
-          </p>
-        </header>
+      <div
+        ref={pageRef}
+        className="print-page refus-officiel-page relative h-[297mm] w-[210mm] overflow-hidden bg-white"
+      >
+        <img
+          src="/refus-evacuation-officiel.png"
+          alt=""
+          className="absolute inset-0 h-full w-full object-fill"
+        />
 
-        <section className="mb-4 border border-slate-400">
-          <h2 className="bg-black px-2 py-1 text-[11px] font-black uppercase tracking-wide text-white">
-            Information victime
-          </h2>
-          <div className="p-3 text-[12px] leading-relaxed">
-            La victime reconnaît avoir été informée de la nécessité d'une prise
-            en charge médicale et refuse son évacuation.
+        <div className="absolute left-[76mm] top-[108mm] w-[92mm] font-serif text-[12px] font-semibold">
+          {victimeNomComplet}
+        </div>
+        <div className="absolute left-[60mm] top-[121mm] w-[118mm] font-serif text-[12px] font-semibold">
+          {txt(identite.adresse)}
+        </div>
+        <div className="absolute left-[80mm] top-[133mm] w-[70mm] font-serif text-[12px] font-semibold">
+          {txt(numeroVol)}
+        </div>
+
+        {samu.refusAssistanceMedecin ? (
+          <div className="absolute left-[51.6mm] top-[158.2mm] font-serif text-[12px] font-black">
+            X
           </div>
-        </section>
-
-        <section className="mb-4 border border-slate-400">
-          <h2 className="bg-black px-2 py-1 text-[11px] font-black uppercase tracking-wide text-white">
-            Signatures
-          </h2>
-          <PrintRow label="Nom victime" value={samu.refusNomVictime} />
-          <PrintRow
-            label="Signature victime"
-            value={samu.refusSignatureVictime}
-          />
-          <PrintRow label="Nom témoin 1" value={samu.refusNomTemoin1} />
-          <PrintRow
-            label="Signature témoin 1"
-            value={samu.refusSignatureTemoin1}
-          />
-          <PrintRow label="Nom témoin 2" value={samu.refusNomTemoin2} />
-          <PrintRow
-            label="Signature témoin 2"
-            value={samu.refusSignatureTemoin2}
-          />
-        </section>
-
-        <section className="border border-slate-400">
-          <h2 className="bg-black px-2 py-1 text-[11px] font-black uppercase tracking-wide text-white">
-            Observations
-          </h2>
-          <div className="min-h-28 whitespace-pre-wrap px-2 py-2 text-[11px] leading-snug">
-            {txt(samu.refusObservations) || "-"}
+        ) : null}
+        {samu.refusTransport ? (
+          <div className="absolute left-[51.6mm] top-[171.5mm] font-serif text-[12px] font-black">
+            X
           </div>
-        </section>
+        ) : null}
+
+        <div className="absolute left-[50mm] top-[228mm] w-[40mm] font-serif text-[12px] font-semibold">
+          {formatDate(refusDate)}
+        </div>
+        <div className="absolute left-[137mm] top-[236mm] w-[48mm] text-center font-serif text-[12px] font-semibold">
+          <SignatureBox value={samu.refusSignatureVictime} />
+        </div>
+
+        <div className="absolute left-[26mm] top-[265mm] w-[70mm] font-serif text-[11px] font-semibold">
+          {txt(samu.refusPompierIntervenant)}
+          <SignatureBox value={samu.refusSignaturePompier} />
+        </div>
+        <div className="absolute left-[150mm] top-[265mm] w-[36mm] font-serif text-[11px] font-semibold">
+          {txt(samu.refusCompteRendu)}
+        </div>
       </div>
     </div>
   );
@@ -130,24 +263,38 @@ function PrintableRefusEvacuation({ data, pageRef }) {
 export default function SamuTab({ data, set }) {
   const pageRef = useRef(null);
   const [openRefusModal, setOpenRefusModal] = useState(false);
+  const [signatureTarget, setSignatureTarget] = useState(null);
   const [langue, setLangue] = useState("FR");
 
   const refusEvacuation =
     data.samu.vecteur === "Refus d'évacuation par la victime";
+  const identite = data.identite ?? {};
+  const aeronautique = data.aeronautique ?? {};
+  const intervention = data.intervention ?? {};
+  const victimeNomComplet = [identite.prenom, identite.nom]
+    .map(txt)
+    .filter(Boolean)
+    .join(" ");
+  const refusDate =
+    data.samu.refusDate || formatDateForInput(intervention.dateHeure);
 
   const signaturePresente = Boolean(
-    data.samu.refusSignatureVictime?.trim() ||
-      data.samu.refusSignatureTemoin1?.trim() ||
-      data.samu.refusSignatureTemoin2?.trim()
+    data.samu.refusSignatureVictime?.trim() &&
+      data.samu.refusPompierIntervenant?.trim() &&
+      data.samu.refusSignaturePompier?.trim()
   );
 
   const refusTextes = {
-    FR: `La victime reconnaît avoir été informée de la nécessité d'une prise en charge médicale et refuse son évacuation.`,
-    EN: `The patient acknowledges having been informed of the need for medical care and refuses transportation.`,
+    FR: `La victime reconnaît avoir été informée des risques encourus en l'absence d'examen médical et/ou d'hospitalisation. Elle refuse l'assistance médicale et/ou le transport vers un centre hospitalier, et assume la responsabilité de ce refus.`,
+    EN: `The patient acknowledges having been informed of the risks involved without medical assessment and/or hospitalization. They refuse medical assistance and/or transportation to a hospital, and accept responsibility for this refusal.`,
+    DE: `Die betroffene Person bestätigt, über die Risiken ohne ärztliche Untersuchung und/oder Krankenhausbehandlung informiert worden zu sein. Sie lehnt medizinische Hilfe und/oder den Transport in ein Krankenhaus ab und übernimmt die Verantwortung für diese Ablehnung.`,
+    ES: `La víctima reconoce haber sido informada de los riesgos derivados de la ausencia de evaluación médica y/o hospitalización. Rechaza la asistencia médica y/o el traslado a un centro hospitalario, y asume la responsabilidad de esta negativa.`,
   };
 
   const downloadRefusPdf = async () => {
-    await downloadElementAsPdf(pageRef.current, "refus-evacuation.pdf");
+    await downloadElementAsPdf(pageRef.current, "refus-evacuation.pdf", {
+      padding: "0",
+    });
   };
 
   return (
@@ -187,6 +334,16 @@ export default function SamuTab({ data, set }) {
               background: white;
               color: black;
               font-family: Arial, sans-serif;
+            }
+
+            .refus-officiel-page {
+              position: relative;
+              width: 210mm;
+              height: 297mm;
+              min-height: 297mm;
+              overflow: hidden;
+              padding: 0 !important;
+              font-family: "Times New Roman", Times, serif;
             }
 
             @page {
@@ -290,6 +447,11 @@ export default function SamuTab({ data, set }) {
                 title="Refus d'évacuation"
                 onClose={() => setOpenRefusModal(false)}
               >
+                <div className="mb-4 rounded-lg bg-slate-100 p-4 text-sm font-semibold text-slate-800">
+                  Les nom, prénom et adresse sont repris depuis la page Départ,
+                  section Identification.
+                </div>
+
                 <div className="mb-4 flex gap-2">
                   <Button
                     variant={langue === "FR" ? "solid" : "outline"}
@@ -304,64 +466,120 @@ export default function SamuTab({ data, set }) {
                   >
                     English
                   </Button>
+
+                  <Button
+                    variant={langue === "DE" ? "solid" : "outline"}
+                    onClick={() => setLangue("DE")}
+                  >
+                    Deutsch
+                  </Button>
+
+                  <Button
+                    variant={langue === "ES" ? "solid" : "outline"}
+                    onClick={() => setLangue("ES")}
+                  >
+                    Español
+                  </Button>
                 </div>
 
-                <div className="mb-4 whitespace-pre-wrap rounded-lg bg-slate-100 p-4 text-sm">
+                <div className="mb-4 whitespace-pre-wrap rounded-lg bg-blue-50 p-4 text-sm font-semibold text-blue-950">
                   {refusTextes[langue]}
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2">
-                  <Field
-                    label="Nom victime"
-                    value={data.samu.refusNomVictime}
-                    onChange={(v) => set(["samu", "refusNomVictime"], v)}
+                  <ReadOnlyField
+                    label="Victime"
+                    value={victimeNomComplet}
+                  />
+
+                  <ReadOnlyField
+                    label="Adresse"
+                    value={identite.adresse}
                   />
 
                   <Field
-                    label="Signature victime"
-                    value={data.samu.refusSignatureVictime}
+                    label="N° du vol (s'il y a lieu)"
+                    value={data.samu.refusNumeroVol || aeronautique.numeroVol}
+                    onChange={(v) => set(["samu", "refusNumeroVol"], v)}
+                  />
+
+                  <Field
+                    label="Mérignac, le"
+                    type="date"
+                    value={refusDate}
+                    onChange={(v) => set(["samu", "refusDate"], v)}
+                  />
+
+                  <Check
+                    label="Refus de l'assistance d'un médecin"
+                    checked={data.samu.refusAssistanceMedecin}
                     onChange={(v) =>
-                      set(["samu", "refusSignatureVictime"], v)
+                      set(["samu", "refusAssistanceMedecin"], v)
                     }
                   />
 
-                  <Field
-                    label="Nom témoin 1"
-                    value={data.samu.refusNomTemoin1}
-                    onChange={(v) => set(["samu", "refusNomTemoin1"], v)}
+                  <Check
+                    label="Refus du transport vers un centre hospitalier"
+                    checked={data.samu.refusTransport}
+                    onChange={(v) => set(["samu", "refusTransport"], v)}
                   />
 
+                  <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <div className="text-sm font-bold text-slate-700">
+                      Signature victime - Lu et approuvé
+                    </div>
+                    <div className="min-h-20 rounded-lg border border-dashed border-slate-300 bg-white p-2">
+                      <SignatureBox value={data.samu.refusSignatureVictime} />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button onClick={() => setSignatureTarget("victime")}>
+                        Signer
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          set(["samu", "refusSignatureVictime"], "")
+                        }
+                      >
+                        Effacer
+                      </Button>
+                    </div>
+                  </div>
+
                   <Field
-                    label="Signature témoin 1"
-                    value={data.samu.refusSignatureTemoin1}
+                    label="Nom du pompier intervenant"
+                    value={data.samu.refusPompierIntervenant}
                     onChange={(v) =>
-                      set(["samu", "refusSignatureTemoin1"], v)
+                      set(["samu", "refusPompierIntervenant"], v)
                     }
                   />
+
+                  <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <div className="text-sm font-bold text-slate-700">
+                      Signature pompier intervenant
+                    </div>
+                    <div className="min-h-20 rounded-lg border border-dashed border-slate-300 bg-white p-2">
+                      <SignatureBox value={data.samu.refusSignaturePompier} />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button onClick={() => setSignatureTarget("pompier")}>
+                        Signer
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          set(["samu", "refusSignaturePompier"], "")
+                        }
+                      >
+                        Effacer
+                      </Button>
+                    </div>
+                  </div>
 
                   <Field
-                    label="Nom témoin 2"
-                    value={data.samu.refusNomTemoin2}
-                    onChange={(v) => set(["samu", "refusNomTemoin2"], v)}
-                  />
-
-                  <Field
-                    label="Signature témoin 2"
-                    value={data.samu.refusSignatureTemoin2}
-                    onChange={(v) =>
-                      set(["samu", "refusSignatureTemoin2"], v)
-                    }
-                  />
-                </div>
-
-                <div className="mt-4">
-                  <textarea
-                    value={data.samu.refusObservations ?? ""}
-                    onChange={(e) =>
-                      set(["samu", "refusObservations"], e.target.value)
-                    }
-                    placeholder="Observations complémentaires"
-                    className="min-h-24 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-200"
+                    label="N° de Compte-Rendu d'Intervention"
+                    value={data.samu.refusCompteRendu}
+                    onChange={(v) => set(["samu", "refusCompteRendu"], v)}
                   />
                 </div>
 
@@ -374,7 +592,7 @@ export default function SamuTab({ data, set }) {
                 >
                   {signaturePresente
                     ? "Fiche de refus d'évacuation OK"
-                    : "Signature victime ou témoin requise"}
+                    : "Signatures victime et pompier intervenant requises"}
                 </div>
               </Modal>
             </>
@@ -383,6 +601,20 @@ export default function SamuTab({ data, set }) {
       </CardBlock>
 
       <PrintableRefusEvacuation data={data} pageRef={pageRef} />
+      <SignaturePadModal
+        open={signatureTarget === "victime"}
+        title="Signature victime"
+        value={data.samu.refusSignatureVictime}
+        onSave={(value) => set(["samu", "refusSignatureVictime"], value)}
+        onClose={() => setSignatureTarget(null)}
+      />
+      <SignaturePadModal
+        open={signatureTarget === "pompier"}
+        title="Signature pompier intervenant"
+        value={data.samu.refusSignaturePompier}
+        onSave={(value) => set(["samu", "refusSignaturePompier"], value)}
+        onClose={() => setSignatureTarget(null)}
+      />
     </>
   );
 }

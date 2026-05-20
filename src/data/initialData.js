@@ -3,7 +3,8 @@ export const BLANK_SURVEILLANCE = {
   fr: "",
   spo2: "",
   fc: "",
-  ta: "",
+  taGauche: "",
+  taDroite: "",
   glasgow: "",
   evn: "",
   notes: "",
@@ -51,7 +52,8 @@ export const INITIAL_DATA = {
 
     cPouls: "",
     cFC: "",
-    cTA: "",
+    cTAGauche: "",
+    cTADroite: "",
     cTRC: "",
     cDetresse: false,
 
@@ -122,6 +124,8 @@ export const INITIAL_DATA = {
     position: "",
     immobilisation: false,
     pansement: false,
+    dsa: false,
+    dsaChocs: "",
     asu: "",
     autres: "",
   },
@@ -135,14 +139,15 @@ export const INITIAL_DATA = {
     vecteur: "",
 
     refusEvacuationOk: false,
-    refusObservations: "",
-    
-    refusNomVictime: "",
+
+    refusNumeroVol: "",
+    refusAssistanceMedecin: false,
+    refusTransport: false,
+    refusDate: "",
     refusSignatureVictime: "",
-    refusNomTemoin1: "",
-    refusSignatureTemoin1: "",
-    refusNomTemoin2: "",
-    refusSignatureTemoin2: "",
+    refusPompierIntervenant: "",
+    refusSignaturePompier: "",
+    refusCompteRendu: "",
   },
 
   aeronautique: {

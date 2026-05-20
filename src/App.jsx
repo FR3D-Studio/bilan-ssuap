@@ -79,6 +79,17 @@ function formatTime(value) {
   return `${match[1]}:${match[2]}`;
 }
 
+function formatTa(gauche, droite, fallback = "") {
+  const taGauche = txt(gauche);
+  const taDroite = txt(droite);
+
+  if (taGauche || taDroite) {
+    return `G ${taGauche || "-"} / D ${taDroite || "-"}`;
+  }
+
+  return txt(fallback);
+}
+
 function normalizeNovi(value) {
   const raw = txt(value).trim();
 
@@ -180,9 +191,13 @@ function buildResume(data) {
         .map((x, index) =>
           `${index + 1}. ${formatTime(x?.heure)} FR ${txt(x?.fr)} SpO2 ${txt(
             x?.spo2
-          )} FC ${txt(x?.fc)} TA ${txt(x?.ta)} Glasgow ${txt(
-            x?.glasgow
-          )} EVN ${txt(x?.evn)} ${txt(x?.notes)}`.trim()
+          )} FC ${txt(x?.fc)} TA ${formatTa(
+            x?.taGauche,
+            x?.taDroite,
+            x?.ta
+          )} Glasgow ${txt(x?.glasgow)} EVN ${txt(
+            x?.evn || s.pqrstS
+          )} ${txt(x?.notes)}`.trim()
         )
         .join("\n")
     : "Aucune surveillance renseignée";
@@ -220,7 +235,9 @@ function buildResume(data) {
     `B respiration : ${txt(p.bQualite)}, FR ${txt(p.bFR)}, SpO2 ${txt(
       p.bSpO2
     )}, détresse ${yesNo(p.bDetresse)}`,
-    `C circulation : pouls ${txt(p.cPouls)}, FC ${txt(p.cFC)}, TA ${txt(
+    `C circulation : pouls ${txt(p.cPouls)}, FC ${txt(p.cFC)}, TA ${formatTa(
+      p.cTAGauche,
+      p.cTADroite,
       p.cTA
     )}, TRC ${txt(p.cTRC)}, détresse ${yesNo(p.cDetresse)}`,
     `D neurologique : Glasgow ${calculateGlasgow(d)}, conscience ${txt(
@@ -236,7 +253,7 @@ function buildResume(data) {
       s.hospitalisation
     )} / Traitement ${txt(s.traitement)} / Allergie ${txt(s.allergie)}`,
     `Glycémie ${txt(s.glycemie)}, T ${txt(s.temperature)}, EVN ${txt(
-      s.evn
+      s.pqrstS || s.evn
     )}, FAST ${isFastPositive(s) ? "positif" : "négatif/non retrouvé"}, Heure début symptômes ${formatTime(
       s.fastTime
     )}`,
@@ -247,6 +264,8 @@ function buildResume(data) {
       g.position
     )}, immobilisation ${yesNo(g.immobilisation)}, pansement ${yesNo(
       g.pansement
+    )}, DSA ${yesNo(g.dsa)}, chocs délivrés ${txt(
+      g.dsaChocs
     )}, ASU ${txt(g.asu)}, autres ${txt(g.autres)}`,
     "",
     "SAMU",

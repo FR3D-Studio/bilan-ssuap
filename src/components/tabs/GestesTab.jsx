@@ -118,6 +118,19 @@ export default function GestesTab({
       >
         <div className="grid gap-3 md:grid-cols-2">
           <Check
+            label="DSA"
+            checked={data.gestes.dsa}
+            onChange={(v) => set(["gestes", "dsa"], v)}
+          />
+
+          <Field
+            label="Nbrs de chocs délivré"
+            type="number"
+            value={data.gestes.dsaChocs}
+            onChange={(v) => set(["gestes", "dsaChocs"], v)}
+          />
+
+          <Check
             label="O₂ administré"
             checked={data.gestes.oxygene}
             onChange={(v) => set(["gestes", "oxygene"], v)}
@@ -127,13 +140,6 @@ export default function GestesTab({
             label="Débit O₂"
             value={data.gestes.o2Debit}
             onChange={(v) => set(["gestes", "o2Debit"], v)}
-          />
-
-          <SelectField
-            label="Position"
-            value={data.gestes.position}
-            onChange={(v) => set(["gestes", "position"], v)}
-            options={OPTIONS.position}
           />
 
           <Check
@@ -146,6 +152,13 @@ export default function GestesTab({
             label="Pansement / protection"
             checked={data.gestes.pansement}
             onChange={(v) => set(["gestes", "pansement"], v)}
+          />
+
+          <SelectField
+            label="Position"
+            value={data.gestes.position}
+            onChange={(v) => set(["gestes", "position"], v)}
+            options={OPTIONS.position}
           />
 
           <Field
@@ -168,7 +181,7 @@ export default function GestesTab({
           {surveillance.map((s, i) => (
             <div
               key={`surveillance-${i}`}
-              className="grid gap-2 rounded-lg border border-slate-200 bg-white p-3 md:grid-cols-8"
+              className="grid gap-2 rounded-lg border border-slate-200 bg-white p-3 md:grid-cols-3 lg:grid-cols-9"
             >
               <Field
                 label="Heure"
@@ -191,19 +204,26 @@ export default function GestesTab({
                 value={s?.fc}
                 onChange={(v) => updateSurveillance(i, "fc", v)}
               />
-              <Field
-                label="TA"
-                value={s?.ta}
-                onChange={(v) => updateSurveillance(i, "ta", v)}
-              />
+              <div className="grid gap-2 md:col-span-2 md:grid-cols-2">
+                <Field
+                  label="TA gauche"
+                  value={s?.taGauche ?? s?.ta}
+                  onChange={(v) => updateSurveillance(i, "taGauche", v)}
+                />
+                <Field
+                  label="TA droite"
+                  value={s?.taDroite}
+                  onChange={(v) => updateSurveillance(i, "taDroite", v)}
+                />
+              </div>
               <Field
                 label="Glasgow"
                 value={s?.glasgow}
                 onChange={(v) => updateSurveillance(i, "glasgow", v)}
-              />
+                />
               <Field
                 label="EVN"
-                value={s?.evn}
+                value={s?.evn || data.secondaire?.pqrstS}
                 onChange={(v) => updateSurveillance(i, "evn", v)}
               />
               <Field

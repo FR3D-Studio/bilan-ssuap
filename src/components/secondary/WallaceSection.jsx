@@ -14,6 +14,7 @@ export default function WallaceSection({ s, set }) {
       title="Règle de Wallace"
       value={`Surface brûlée : ${wallace}%`}
       danger={false}
+      collapsible
     >
       <p className="mb-3 rounded-lg bg-amber-50 p-3 text-sm font-semibold text-amber-900">
         Contrôler systématiquement la face antérieure ET la face postérieure de

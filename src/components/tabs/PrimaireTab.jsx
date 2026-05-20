@@ -47,6 +47,12 @@ export default function PrimaireTab({ data, set, detresseVitale }) {
           placeholder="compression, pansement, garrot..."
         />
 
+        <Check
+          label="A : suspicion rachis / stabilisation"
+          checked={data.primaire.aRachis}
+          onChange={(v) => set(["primaire", "aRachis"], v)}
+        />
+
         <SelectField
           label="A : voies aériennes"
           value={data.primaire.aVA}
@@ -55,9 +61,14 @@ export default function PrimaireTab({ data, set, detresseVitale }) {
         />
 
         <Check
-          label="A : suspicion rachis / stabilisation"
-          checked={data.primaire.aRachis}
-          onChange={(v) => set(["primaire", "aRachis"], v)}
+          label={
+            data.primaire.bDetresse
+              ? "B : détresse respiratoire / Appel SAMU immédiat"
+              : "B : détresse respiratoire"
+          }
+          checked={data.primaire.bDetresse}
+          danger={data.primaire.bDetresse}
+          onChange={(v) => set(["primaire", "bDetresse"], v)}
         />
 
         <SelectField
@@ -86,16 +97,18 @@ export default function PrimaireTab({ data, set, detresseVitale }) {
           onChange={(v) => set(["primaire", "bSpO2"], v)}
         />
 
-        <Check
-          label={
-            data.primaire.bDetresse
-              ? "B : détresse respiratoire / Appel SAMU immédiat"
-              : "B : détresse respiratoire"
-          }
-          checked={data.primaire.bDetresse}
-          danger={data.primaire.bDetresse}
-          onChange={(v) => set(["primaire", "bDetresse"], v)}
-        />
+        <div className="md:col-start-1">
+          <Check
+            label={
+              data.primaire.cDetresse
+                ? "C : détresse circulatoire / Appel SAMU immédiat"
+                : "C : détresse circulatoire"
+            }
+            checked={data.primaire.cDetresse}
+            danger={data.primaire.cDetresse}
+            onChange={(v) => set(["primaire", "cDetresse"], v)}
+          />
+        </div>
 
         <SelectField
           label="C : pouls"
@@ -115,27 +128,24 @@ export default function PrimaireTab({ data, set, detresseVitale }) {
         />
 
         <Field
-          label="C : TA"
-          value={data.primaire.cTA}
-          onChange={(v) => set(["primaire", "cTA"], v)}
-        />
-
-        <Field
           label="C : TRC"
           value={data.primaire.cTRC}
           onChange={(v) => set(["primaire", "cTRC"], v)}
         />
 
-        <Check
-          label={
-            data.primaire.cDetresse
-              ? "C : détresse circulatoire / Appel SAMU immédiat"
-              : "C : détresse circulatoire"
-          }
-          checked={data.primaire.cDetresse}
-          danger={data.primaire.cDetresse}
-          onChange={(v) => set(["primaire", "cDetresse"], v)}
-        />
+        <div className="grid gap-3 md:col-span-2 md:grid-cols-2">
+          <Field
+            label="C : TA gauche"
+            value={data.primaire.cTAGauche}
+            onChange={(v) => set(["primaire", "cTAGauche"], v)}
+          />
+
+          <Field
+            label="C : TA droite"
+            value={data.primaire.cTADroite}
+            onChange={(v) => set(["primaire", "cTADroite"], v)}
+          />
+        </div>
 
         <div className="md:col-span-2">
           <ScoreCard

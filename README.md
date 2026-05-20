@@ -101,7 +101,7 @@ Gestion :
 ## C — Circulation
 - pouls ;
 - fréquence cardiaque ;
-- tension artérielle ;
+- tension artérielle gauche / droite ;
 - TRC ;
 - détresse circulatoire.
 
@@ -166,6 +166,7 @@ FAST positif / négatif
 ## Score de Malinas
 
 Calcul automatique du score.
+Bloc dépliable pour limiter l'encombrement visuel en intervention.
 
 Alerte :
 
@@ -188,6 +189,8 @@ Gestion :
 - face antérieure ;
 - face postérieure ;
 - calcul automatique surface brûlée.
+
+Bloc dépliable avec score visible dans l'en-tête.
 
 ---
 
@@ -237,6 +240,8 @@ Détresse vitale potentielle
 # Gestes réalisés
 
 Gestion :
+- DSA ;
+- nombre de chocs délivrés ;
 - oxygène ;
 - débit O₂ ;
 - positionnement ;
@@ -255,9 +260,10 @@ Ajout dynamique de surveillances :
 - FR ;
 - SpO₂ ;
 - FC ;
-- TA ;
+- TA gauche ;
+- TA droite ;
 - Glasgow ;
-- EVN ;
+- EVN, avec reprise possible depuis le champ PQRST "S - Sévérité / EVN" ;
 - notes.
 
 ---
@@ -315,14 +321,16 @@ Disponibles :
 # Refus d’évacuation
 
 En cas de refus :
-- ouverture d’une fiche dédiée ;
+- ouverture d'une fiche dédiée ;
 - modal intégrée ;
-- support multilingue FR / EN ;
-- signatures victime / témoins ;
-- observations ;
-- validation automatique si signature renseignée.
-
-Le modèle actuel est provisoire dans l’attente du document officiel.
+- fiche officielle de décharge de responsabilité Aéroport de Bordeaux ;
+- import automatique du nom, prénom et de l'adresse depuis Départ > Identification ;
+- reprise possible du numéro de vol ;
+- cases de refus de l'assistance d'un médecin et du transport ;
+- aide multilingue FR / EN / DE / ES dans le modal ;
+- signature tactile/souris de la victime ;
+- signature tactile/souris du pompier intervenant ;
+- export PDF sur le fond officiel.
 
 ---
 
@@ -333,7 +341,7 @@ Fonctions disponibles :
 - copie presse-papier ;
 - ouverture mail ;
 - impression ;
-- export PDF (amélioration en cours).
+- export PDF A4 stabilisé.
 
 ---
 

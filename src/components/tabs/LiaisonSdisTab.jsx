@@ -11,6 +11,17 @@ import { downloadElementAsPdf } from "../../utils/pdfExport";
 const txt = (value) =>
   value === null || value === undefined ? "" : String(value);
 
+function formatTa(gauche, droite, fallback = "") {
+  const taGauche = txt(gauche);
+  const taDroite = txt(droite);
+
+  if (taGauche || taDroite) {
+    return `G ${taGauche || "-"} / D ${taDroite || "-"}`;
+  }
+
+  return txt(fallback);
+}
+
 function buildLiaison(data) {
   const id = data.identite ?? {};
   const c = data.circonstanciel ?? {};
@@ -26,9 +37,13 @@ function buildLiaison(data) {
           (x, index) =>
             `${index + 1}. ${txt(x?.heure)} | FR ${txt(x?.fr)} | SpO₂ ${txt(
               x?.spo2
-            )} | FC ${txt(x?.fc)} | TA ${txt(x?.ta)} | Glasgow ${txt(
-              x?.glasgow
-            )} | EVN ${txt(x?.evn)} | ${txt(x?.notes)}`
+            )} | FC ${txt(x?.fc)} | TA ${formatTa(
+              x?.taGauche,
+              x?.taDroite,
+              x?.ta
+            )} | Glasgow ${txt(x?.glasgow)} | EVN ${txt(
+              x?.evn || s.pqrstS
+            )} | ${txt(x?.notes)}`
         )
         .join("\n")
     : "Aucune surveillance renseignée";
@@ -201,7 +216,12 @@ function PrintableLiaison({ data, pageRef }) {
                     <th className="border border-slate-300 px-1 py-1">FR</th>
                     <th className="border border-slate-300 px-1 py-1">SpO₂</th>
                     <th className="border border-slate-300 px-1 py-1">FC</th>
-                    <th className="border border-slate-300 px-1 py-1">TA</th>
+                    <th className="border border-slate-300 px-1 py-1">
+                      TA gauche
+                    </th>
+                    <th className="border border-slate-300 px-1 py-1">
+                      TA droite
+                    </th>
                     <th className="border border-slate-300 px-1 py-1">
                       Glasgow
                     </th>
@@ -228,13 +248,16 @@ function PrintableLiaison({ data, pageRef }) {
                         {txt(x?.fc) || "—"}
                       </td>
                       <td className="border border-slate-300 px-1 py-1">
-                        {txt(x?.ta) || "—"}
+                        {txt(x?.taGauche || x?.ta) || "—"}
+                      </td>
+                      <td className="border border-slate-300 px-1 py-1">
+                        {txt(x?.taDroite) || "—"}
                       </td>
                       <td className="border border-slate-300 px-1 py-1">
                         {txt(x?.glasgow) || "—"}
                       </td>
                       <td className="border border-slate-300 px-1 py-1">
-                        {txt(x?.evn) || "—"}
+                        {txt(x?.evn || s.pqrstS) || "—"}
                       </td>
                       <td className="border border-slate-300 px-1 py-1">
                         {txt(x?.notes) || "—"}

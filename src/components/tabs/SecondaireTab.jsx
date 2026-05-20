@@ -180,6 +180,7 @@ export default function SecondaireTab({ data, set }) {
         title="Score de Malinas"
         value={`Malinas : ${malinas}`}
         danger={malinas >= 5}
+        collapsible
       >
         <div className="grid gap-3 md:grid-cols-2">
           <SelectField
@@ -249,14 +250,6 @@ export default function SecondaireTab({ data, set }) {
         </h3>
 
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-          <Field
-            label="EVN"
-            value={s.evn}
-            onChange={(v) =>
-              set(["secondaire", "evn"], v)
-            }
-          />
-
           <Field
             label="Glycémie"
             value={s.glycemie}
